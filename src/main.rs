@@ -1,6 +1,6 @@
 mod game;
 
 fn main() {
-    let board = game::new_game();
-    println!("{:?}", board);
+    let game = game::new_game();
+    println!("{:?}", game);
 }

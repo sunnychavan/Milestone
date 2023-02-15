@@ -2,8 +2,8 @@ use super::pieces::Piece;
 
 #[derive(Debug)]
 pub struct Player {
-    name: String,
-    pieces: Piece,
+    pub name: String,
+    pub pieces: Piece,
 }
 
 impl Player {
@@ -11,10 +11,10 @@ impl Player {
         Player { name, pieces }
     }
 
-    pub fn new_players(name_one: String, name_two: String) -> (Player, Player) {
-        (
+    pub fn new_players(name_one: String, name_two: String) -> [Player; 2] {
+        [
             Player::new(name_one, Piece::Black),
             Player::new(name_two, Piece::White),
-        )
+        ]
     }
 }
