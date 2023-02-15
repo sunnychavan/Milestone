@@ -4,7 +4,6 @@
 
 TODO:
 
-- create debug print that includes hole numbers
 - create move map
 - allow user input (via CLI / position strings)
 
