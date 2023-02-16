@@ -404,4 +404,17 @@ impl Board {
             white_move_lookup: get_white_moves(),
         }
     }
+
+    pub fn can_move(&self, from: &usize, to: &usize, turn: u8) -> bool {
+        let lookup = match turn {
+            0 => &self.black_move_lookup,
+            1 => &self.white_move_lookup,
+            _ => panic!("it's impossible for more than two players to move"),
+        };
+
+        match lookup.get(from) {
+            Some(possible_moves) => possible_moves.contains(to),
+            None => false,
+        }
+    }
 }

@@ -1,9 +1,9 @@
-use super::{board::Board, player::Player};
+use super::{board::Board, board::Hole, pieces::Piece, player::Player};
 use std::fmt;
 
 pub struct State {
     active: bool,
-    current_turn: usize,
+    current_turn: u8,
     board: Board,
     players: [Player; 2],
 }
@@ -14,7 +14,7 @@ impl fmt::Debug for State {
 
         repr.push_str(&format!("active: {:?}\n", self.active));
 
-        let current_player = &self.players[self.current_turn];
+        let current_player = &self.players[usize::from(self.current_turn)];
         repr.push_str(&format!(
             "current_turn: {} {:?}\n",
             current_player.name, current_player.pieces
@@ -36,7 +36,7 @@ impl fmt::Display for State {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let mut repr = "Milestone:\n".to_owned();
 
-        let current_player = &self.players[self.current_turn];
+        let current_player: &Player = &self.players[usize::from(self.current_turn)];
         repr.push_str(&format!(
             "  current_turn: {} {:?}\n",
             current_player.name, current_player.pieces
@@ -58,7 +58,39 @@ impl State {
         }
     }
 
-    pub fn move_piece(from: usize, to: usize, capture: bool) -> Result<State, &'static str> {
-        todo!();
+    pub fn move_piece(
+        &mut self,
+        from: usize,
+        to: usize,
+        capture: bool,
+    ) -> Result<&State, &'static str> {
+        let current_player_pieces = self.players[usize::from(self.current_turn)].pieces;
+
+        match self.board.can_move(&from, &to, self.current_turn) {
+            true => match self.board.board[to].0 {
+                Some(existing_piece) if existing_piece == current_player_pieces => {
+                    Err("can't occupy the same space as another one of your pieces")
+                }
+                Some(_) => {
+                    if capture {
+                        // return state with piece moved and captured
+                        self.board.board[from] = Hole(None);
+                        self.board.board[to] = Hole(Some(current_player_pieces));
+
+                        Ok(self)
+                    } else {
+                        Err("don't have permission to capture")
+                    }
+                }
+                None => {
+                    // return state with piece moved
+                    self.board.board[from] = Hole(None);
+                    self.board.board[to] = Hole(Some(current_player_pieces));
+
+                    Ok(self)
+                }
+            },
+            false => Err("not a legal move for this piece"),
+        }
     }
 }
