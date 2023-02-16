@@ -2,7 +2,7 @@ use super::{board::Board, board::Hole, pieces::Piece, player::Player};
 use std::fmt;
 
 pub struct State {
-    active: bool,
+    pub active: bool,
     current_turn: u8,
     board: Board,
     players: [Player; 2],
@@ -73,24 +73,32 @@ impl State {
                 }
                 Some(_) => {
                     if capture {
-                        // return state with piece moved and captured
-                        self.board.board[from] = Hole(None);
-                        self.board.board[to] = Hole(Some(current_player_pieces));
-
+                        self.move_piece_aux(from, to, current_player_pieces);
                         Ok(self)
                     } else {
                         Err("don't have permission to capture")
                     }
                 }
                 None => {
-                    // return state with piece moved
-                    self.board.board[from] = Hole(None);
-                    self.board.board[to] = Hole(Some(current_player_pieces));
-
+                    self.move_piece_aux(from, to, current_player_pieces);
                     Ok(self)
                 }
             },
-            false => Err("not a legal move for this piece"),
+            false => Err("not a legal move for this piece or it's not your turn"),
+        }
+    }
+
+    fn move_piece_aux(&mut self, from: usize, to: usize, current_player_pieces: Piece) {
+        // return state with piece moved
+        self.board.board[from] = Hole(None);
+        self.board.board[to] = Hole(Some(current_player_pieces));
+
+        // check if game ends
+        if to == 0 || to == 36 {
+            self.active = false;
+        } else {
+            // one move per turn
+            self.current_turn = 1 - self.current_turn;
         }
     }
 }

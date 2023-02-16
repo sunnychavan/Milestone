@@ -4,7 +4,7 @@
 
 TODO:
 
-- create move map
+- only allow forwards captures
 - allow user input (via CLI / position strings)
 
 ## Board Position Strings
