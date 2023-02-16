@@ -57,4 +57,8 @@ impl State {
             players: players,
         }
     }
+
+    pub fn move_piece(from: usize, to: usize, capture: bool) -> Result<State, &'static str> {
+        todo!();
+    }
 }
