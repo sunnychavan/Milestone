@@ -4,8 +4,8 @@ use std::fmt;
 
 pub struct Board {
     pub board: [Hole; 37],
-    black_move_lookup: HashMap<usize, Vec<usize>>,
-    white_move_lookup: HashMap<usize, Vec<usize>>,
+    black_move_lookup: HashMap<usize, Vec<Move>>,
+    white_move_lookup: HashMap<usize, Vec<Move>>,
 }
 
 impl fmt::Display for Board {
@@ -280,110 +280,117 @@ impl fmt::Debug for Hole {
     }
 }
 
-fn get_black_moves() -> HashMap<usize, Vec<usize>> {
-    let mut hm: HashMap<usize, Vec<usize>> = HashMap::new();
+#[derive(Copy, Clone)]
+pub enum Move {
+    Straight(usize),
+    Diagonal(usize),
+}
+use Move::{Diagonal, Straight};
 
-    hm.insert(0, vec![1, 2, 4]);
+fn get_black_moves() -> HashMap<usize, Vec<Move>> {
+    let mut hm: HashMap<usize, Vec<Move>> = HashMap::new();
 
-    hm.insert(1, vec![1, 3, 7]);
-    hm.insert(2, vec![4, 5, 8]);
+    hm.insert(0, vec![Diagonal(1), Diagonal(2), Straight(4)]);
 
-    hm.insert(3, vec![6, 7, 10]);
-    hm.insert(4, vec![7, 8, 11]);
-    hm.insert(5, vec![8, 9, 12]);
+    hm.insert(1, vec![Diagonal(1), Diagonal(3), Straight(7)]);
+    hm.insert(2, vec![Diagonal(4), Diagonal(5), Straight(8)]);
 
-    hm.insert(6, vec![10, 13]);
-    hm.insert(7, vec![10, 11, 14]);
-    hm.insert(8, vec![11, 12, 15]);
-    hm.insert(9, vec![12, 16]);
+    hm.insert(3, vec![Diagonal(6), Diagonal(7), Straight(10)]);
+    hm.insert(4, vec![Diagonal(7), Diagonal(8), Straight(11)]);
+    hm.insert(5, vec![Diagonal(8), Diagonal(9), Straight(12)]);
 
-    hm.insert(10, vec![13, 14, 17]);
-    hm.insert(11, vec![14, 15, 18]);
-    hm.insert(12, vec![15, 16, 19]);
+    hm.insert(6, vec![Diagonal(10), Straight(13)]);
+    hm.insert(7, vec![Diagonal(10), Diagonal(11), Straight(14)]);
+    hm.insert(8, vec![Diagonal(11), Diagonal(12), Straight(15)]);
+    hm.insert(9, vec![Diagonal(12), Straight(16)]);
 
-    hm.insert(13, vec![17, 20]);
-    hm.insert(14, vec![17, 18, 21]);
-    hm.insert(15, vec![18, 19, 22]);
-    hm.insert(16, vec![23, 26]);
+    hm.insert(10, vec![Diagonal(13), Diagonal(14), Straight(17)]);
+    hm.insert(11, vec![Diagonal(14), Diagonal(15), Straight(18)]);
+    hm.insert(12, vec![Diagonal(15), Diagonal(16), Straight(19)]);
 
-    hm.insert(17, vec![20, 21, 24]);
-    hm.insert(18, vec![21, 22, 25]);
-    hm.insert(19, vec![22, 23, 26]);
+    hm.insert(13, vec![Diagonal(17), Straight(20)]);
+    hm.insert(14, vec![Diagonal(17), Diagonal(18), Straight(21)]);
+    hm.insert(15, vec![Diagonal(18), Diagonal(19), Straight(22)]);
+    hm.insert(16, vec![Diagonal(23), Straight(26)]);
 
-    hm.insert(20, vec![24, 27]);
-    hm.insert(21, vec![24, 25, 28]);
-    hm.insert(22, vec![25, 26, 29]);
-    hm.insert(23, vec![26, 30]);
+    hm.insert(17, vec![Diagonal(20), Diagonal(21), Straight(24)]);
+    hm.insert(18, vec![Diagonal(21), Diagonal(22), Straight(25)]);
+    hm.insert(19, vec![Diagonal(22), Diagonal(23), Straight(26)]);
 
-    hm.insert(24, vec![27, 28, 31]);
-    hm.insert(25, vec![28, 29, 32]);
-    hm.insert(26, vec![29, 30, 33]);
+    hm.insert(20, vec![Diagonal(24), Straight(27)]);
+    hm.insert(21, vec![Diagonal(24), Diagonal(25), Straight(28)]);
+    hm.insert(22, vec![Diagonal(25), Diagonal(26), Straight(29)]);
+    hm.insert(23, vec![Diagonal(26), Straight(30)]);
 
-    hm.insert(27, vec![31]);
-    hm.insert(28, vec![31, 32, 34]);
-    hm.insert(29, vec![32, 33, 25]);
-    hm.insert(30, vec![33]);
+    hm.insert(24, vec![Diagonal(27), Diagonal(28), Straight(31)]);
+    hm.insert(25, vec![Diagonal(28), Diagonal(29), Straight(32)]);
+    hm.insert(26, vec![Diagonal(29), Diagonal(30), Straight(33)]);
 
-    hm.insert(31, vec![34]);
-    hm.insert(32, vec![34, 35, 36]);
-    hm.insert(33, vec![35]);
+    hm.insert(27, vec![Diagonal(31)]);
+    hm.insert(28, vec![Diagonal(31), Diagonal(32), Straight(34)]);
+    hm.insert(29, vec![Diagonal(32), Diagonal(33), Straight(25)]);
+    hm.insert(30, vec![Diagonal(33)]);
 
-    hm.insert(34, vec![36]);
-    hm.insert(35, vec![36]);
+    hm.insert(31, vec![Diagonal(34)]);
+    hm.insert(32, vec![Diagonal(34), Diagonal(35), Straight(36)]);
+    hm.insert(33, vec![Diagonal(35)]);
+
+    hm.insert(34, vec![Diagonal(36)]);
+    hm.insert(35, vec![Diagonal(36)]);
 
     hm
 }
 
-fn get_white_moves() -> HashMap<usize, Vec<usize>> {
-    let mut hm: HashMap<usize, Vec<usize>> = HashMap::new();
+fn get_white_moves() -> HashMap<usize, Vec<Move>> {
+    let mut hm: HashMap<usize, Vec<Move>> = HashMap::new();
 
-    hm.insert(36, vec![35, 34, 32]);
+    hm.insert(36, vec![Diagonal(35), Diagonal(34), Straight(32)]);
 
-    hm.insert(35, vec![33, 32, 29]);
-    hm.insert(34, vec![32, 31, 28]);
+    hm.insert(35, vec![Diagonal(33), Diagonal(32), Straight(29)]);
+    hm.insert(34, vec![Diagonal(32), Diagonal(31), Straight(28)]);
 
-    hm.insert(33, vec![30, 29, 26]);
-    hm.insert(32, vec![29, 28, 25]);
-    hm.insert(31, vec![28, 27, 24]);
+    hm.insert(33, vec![Diagonal(30), Diagonal(29), Straight(26)]);
+    hm.insert(32, vec![Diagonal(29), Diagonal(28), Straight(25)]);
+    hm.insert(31, vec![Diagonal(28), Diagonal(27), Straight(24)]);
 
-    hm.insert(30, vec![26, 23]);
-    hm.insert(29, vec![26, 25, 22]);
-    hm.insert(28, vec![25, 24, 21]);
-    hm.insert(27, vec![24, 20]);
+    hm.insert(30, vec![Diagonal(26), Straight(23)]);
+    hm.insert(29, vec![Diagonal(26), Diagonal(25), Straight(22)]);
+    hm.insert(28, vec![Diagonal(25), Diagonal(24), Straight(21)]);
+    hm.insert(27, vec![Diagonal(24), Straight(20)]);
 
-    hm.insert(26, vec![23, 22, 19]);
-    hm.insert(25, vec![22, 21, 18]);
-    hm.insert(24, vec![21, 20, 17]);
+    hm.insert(26, vec![Diagonal(23), Diagonal(22), Straight(19)]);
+    hm.insert(25, vec![Diagonal(22), Diagonal(21), Straight(18)]);
+    hm.insert(24, vec![Diagonal(21), Diagonal(20), Straight(17)]);
 
-    hm.insert(23, vec![19, 16]);
-    hm.insert(22, vec![19, 18, 15]);
-    hm.insert(21, vec![18, 17, 14]);
-    hm.insert(20, vec![17, 13]);
+    hm.insert(23, vec![Diagonal(19), Straight(16)]);
+    hm.insert(22, vec![Diagonal(19), Diagonal(18), Straight(15)]);
+    hm.insert(21, vec![Diagonal(18), Diagonal(17), Straight(14)]);
+    hm.insert(20, vec![Diagonal(17), Straight(13)]);
 
-    hm.insert(19, vec![16, 15, 12]);
-    hm.insert(18, vec![15, 14, 11]);
-    hm.insert(17, vec![14, 13, 10]);
+    hm.insert(19, vec![Diagonal(16), Diagonal(15), Straight(12)]);
+    hm.insert(18, vec![Diagonal(15), Diagonal(14), Straight(11)]);
+    hm.insert(17, vec![Diagonal(14), Diagonal(13), Straight(10)]);
 
-    hm.insert(16, vec![12, 9]);
-    hm.insert(15, vec![12, 11, 8]);
-    hm.insert(14, vec![11, 10, 7]);
-    hm.insert(13, vec![10, 6]);
+    hm.insert(16, vec![Diagonal(12), Straight(9)]);
+    hm.insert(15, vec![Diagonal(12), Diagonal(11), Straight(8)]);
+    hm.insert(14, vec![Diagonal(11), Diagonal(10), Straight(7)]);
+    hm.insert(13, vec![Diagonal(10), Straight(6)]);
 
-    hm.insert(12, vec![9, 8, 5]);
-    hm.insert(11, vec![8, 7, 4]);
-    hm.insert(10, vec![7, 5, 3]);
+    hm.insert(12, vec![Diagonal(9), Diagonal(8), Straight(5)]);
+    hm.insert(11, vec![Diagonal(8), Diagonal(7), Straight(4)]);
+    hm.insert(10, vec![Diagonal(7), Diagonal(5), Straight(3)]);
 
-    hm.insert(9, vec![5]);
-    hm.insert(8, vec![5, 4, 2]);
-    hm.insert(7, vec![4, 3, 1]);
-    hm.insert(6, vec![3]);
+    hm.insert(9, vec![Diagonal(5)]);
+    hm.insert(8, vec![Diagonal(5), Diagonal(4), Straight(2)]);
+    hm.insert(7, vec![Diagonal(4), Diagonal(3), Straight(1)]);
+    hm.insert(6, vec![Diagonal(3)]);
 
-    hm.insert(5, vec![2]);
-    hm.insert(4, vec![2, 1, 0]);
-    hm.insert(3, vec![1]);
+    hm.insert(5, vec![Diagonal(2)]);
+    hm.insert(4, vec![Diagonal(2), Diagonal(1), Straight(0)]);
+    hm.insert(3, vec![Diagonal(1)]);
 
-    hm.insert(2, vec![0]);
-    hm.insert(1, vec![0]);
+    hm.insert(2, vec![Diagonal(0)]);
+    hm.insert(1, vec![Diagonal(0)]);
 
     hm
 }
@@ -405,16 +412,21 @@ impl Board {
         }
     }
 
-    pub fn can_move(&self, from: &usize, to: &usize, turn: u8) -> bool {
+    pub fn possible_move(&self, from: &usize, to: &usize, turn: u8) -> Option<Move> {
         let lookup = match turn {
             0 => &self.black_move_lookup,
             1 => &self.white_move_lookup,
             _ => panic!("it's impossible for more than two players to move"),
         };
 
-        match lookup.get(from) {
-            Some(possible_moves) => possible_moves.contains(to),
-            None => false,
+        match lookup.get(from).cloned() {
+            Some(mut possible_moves) => {
+                possible_moves.retain(|elt| match elt {
+                    Straight(m) | Diagonal(m) => m == to,
+                });
+                possible_moves.pop()
+            }
+            None => None,
         }
     }
 }

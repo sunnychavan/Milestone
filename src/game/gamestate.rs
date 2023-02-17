@@ -1,4 +1,4 @@
-use super::{board::Board, board::Hole, pieces::Piece, player::Player};
+use super::{board::Board, board::Hole, board::Move, pieces::Piece, player::Player};
 use std::fmt;
 
 pub struct State {
@@ -66,25 +66,25 @@ impl State {
     ) -> Result<&State, &'static str> {
         let current_player_pieces = self.players[usize::from(self.current_turn)].pieces;
 
-        match self.board.can_move(&from, &to, self.current_turn) {
-            true => match self.board.board[to].0 {
+        match self.board.possible_move(&from, &to, self.current_turn) {
+            Some(m) => match self.board.board[to].0 {
                 Some(existing_piece) if existing_piece == current_player_pieces => {
                     Err("can't occupy the same space as another one of your pieces")
                 }
-                Some(_) => {
-                    if capture {
+                Some(_) => match (m, capture) {
+                    (Move::Straight(_), true) => {
                         self.move_piece_aux(from, to, current_player_pieces);
                         Ok(self)
-                    } else {
-                        Err("don't have permission to capture")
                     }
-                }
+                    (Move::Diagonal(_), _) => Err("must capture head-on"),
+                    (_, false) => Err("you do not have permission to captue"),
+                },
                 None => {
                     self.move_piece_aux(from, to, current_player_pieces);
                     Ok(self)
                 }
             },
-            false => Err("not a legal move for this piece or it's not your turn"),
+            None => Err("not a legal move for this piece or it's not your turn"),
         }
     }
 

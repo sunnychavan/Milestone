@@ -4,8 +4,7 @@
 
 TODO:
 
-- only allow forwards captures
-- allow user input (via CLI / position strings)
+- allow setting board state via position string from file
 
 ## Board Position Strings
 
