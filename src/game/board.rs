@@ -429,4 +429,40 @@ impl Board {
             None => None,
         }
     }
+
+    pub fn all_valid_moves(&self, turn: u8) -> Vec<Move> {
+        let (piece_type, lookup) = match turn {
+            0 => (Piece::Black, &self.black_move_lookup),
+            1 => (Piece::White, &self.white_move_lookup),
+            _ => panic!("it's impossible for more than two players to move"),
+        };
+
+        // current_pieces is a vector of all pieces for the given player
+        let current_pieces = &self
+            .board
+            .into_iter()
+            .enumerate()
+            .filter_map(|(idx, elt)| match elt {
+                Hole(Some(p)) => {
+                    if p == piece_type {
+                        Some(idx)
+                    } else {
+                        None
+                    }
+                }
+                Hole(None) => None,
+            })
+            .collect::<Vec<usize>>();
+
+        current_pieces
+            .iter()
+            .flat_map(|elt| {
+                let move_dests = lookup.get(elt).cloned();
+                match move_dests {
+                    Some(moves) => moves,
+                    None => vec![],
+                }
+            })
+            .collect::<Vec<Move>>()
+    }
 }
