@@ -12,10 +12,9 @@ pub fn two_player_game() {
 }
 
 fn one_turn(game: &mut State) {
-    let mut input = String::new();
-
     println!("Input your move:");
 
+    let mut input = String::new();
     match io::stdin().read_line(&mut input) {
         Ok(_) => {
             match handle_move_input(game, &input.trim()) {
@@ -38,7 +37,7 @@ fn handle_move_input<'a>(game: &'a mut State, input: &str) -> Result<&'a State, 
             let from = a.parse::<usize>();
             let to = b.parse::<usize>();
             match (from, to) {
-                (Ok(from), Ok(to)) => game.move_piece(from, to, true),
+                (Ok(origin), Ok(dest)) => game.move_piece(origin, dest, true),
                 _ => Err("couldn't parse your move"),
             }
         }
