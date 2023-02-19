@@ -1,6 +1,6 @@
 use super::pieces::Piece;
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct Player {
     pub name: String,
     pub pieces: Piece,

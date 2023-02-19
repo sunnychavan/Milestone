@@ -2,6 +2,7 @@ use super::pieces::Piece;
 use std::collections::HashMap;
 use std::fmt;
 
+#[derive(Clone)]
 pub struct Board {
     pub board: [Hole; 37],
     black_move_lookup: HashMap<usize, Vec<Move>>,

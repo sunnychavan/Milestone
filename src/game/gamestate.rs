@@ -1,6 +1,7 @@
 use super::{board::Board, board::Hole, board::Move, pieces::Piece, player::Player};
 use std::fmt;
 
+#[derive(Clone)]
 pub struct State {
     pub active: bool,
     current_turn: u8,
@@ -65,7 +66,7 @@ impl State {
         let current_player_pieces = self.players[usize::from(self.current_turn)].pieces;
 
         match self.board.possible_move(&from, &to, self.current_turn) {
-            Some(m @ Move::Diagonal(o, d)) | Some(m @ Move::Straight(o, d)) => {
+            Some(m @ Move::Diagonal(_, d)) | Some(m @ Move::Straight(_, d)) => {
                 match self.board.board[d].0 {
                     Some(existing_piece) if existing_piece == current_player_pieces => {
                         Err("can't occupy the same space as another one of your pieces")
