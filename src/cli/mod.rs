@@ -20,7 +20,10 @@ fn one_turn(game: &mut State) {
             match handle_move_input(game, &input.trim()) {
                 Ok(_) => (),
                 Err(e) => {
-                    println!("Couldn't process that move ({}). Please try again", e);
+                    println!(
+                        "Couldn't process that move ({}). Please try again",
+                        e
+                    );
                     one_turn(game);
                 }
             };
@@ -31,7 +34,10 @@ fn one_turn(game: &mut State) {
     println!("{:?}", game);
 }
 
-fn handle_move_input<'a>(game: &'a mut State, input: &str) -> Result<&'a State, &'static str> {
+fn handle_move_input<'a>(
+    game: &'a mut State,
+    input: &str,
+) -> Result<&'a State, &'static str> {
     match input.split('-').collect::<Vec<&str>>()[..] {
         [a, b] => {
             let from = a.parse::<usize>();

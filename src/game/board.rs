@@ -516,7 +516,12 @@ impl Board {
         }
     }
 
-    pub fn possible_move(&self, from: &usize, to: &usize, turn: u8) -> Option<Move> {
+    pub fn possible_move(
+        &self,
+        from: &usize,
+        to: &usize,
+        turn: u8,
+    ) -> Option<Move> {
         let lookup = match turn {
             0 => &self.black_move_lookup,
             1 => &self.white_move_lookup,
