@@ -6,8 +6,8 @@ use std::fmt;
 #[derive(Clone)]
 pub struct State {
     pub active: bool,
-    current_turn: u8,
-    board: Board,
+    pub current_turn: u8,
+    pub board: Board,
     players: [Player; 2],
 }
 

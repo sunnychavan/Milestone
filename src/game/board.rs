@@ -539,16 +539,15 @@ impl Board {
         }
     }
 
-    pub fn all_valid_moves(&self, turn: u8) -> Vec<Move> {
-        let (piece_type, lookup) = match turn {
-            0 => (Piece::Black, &self.black_move_lookup),
-            1 => (Piece::White, &self.white_move_lookup),
+    pub fn current_players_pieces(&self, turn: u8) -> Vec<usize> {
+        let piece_type = match turn {
+            0 => Piece::Black,
+            1 => Piece::White,
             _ => panic!("it's impossible for more than two players to move"),
         };
 
         // current_pieces is a vector of all pieces for the given player
-        let current_pieces = &self
-            .board
+        self.board
             .into_iter()
             .enumerate()
             .filter_map(|(idx, elt)| match elt {
@@ -561,7 +560,18 @@ impl Board {
                 }
                 Hole(None) => None,
             })
-            .collect::<Vec<usize>>();
+            .collect::<Vec<usize>>()
+    }
+
+    pub fn all_valid_moves(&self, turn: u8) -> Vec<Move> {
+        let lookup = match turn {
+            0 => &self.black_move_lookup,
+            1 => &self.white_move_lookup,
+            _ => panic!("it's impossible for more than two players to move"),
+        };
+
+        // current_pieces is a vector of all pieces for the given player
+        let current_pieces = &self.current_players_pieces(turn);
 
         current_pieces
             .iter()

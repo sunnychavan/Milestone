@@ -6,5 +6,8 @@ fn main() {
     // cli::two_player_game();
 
     let game = game::new_game();
-    ai::tree::create_new_tree(&game, 2);
+    let mut tree = ai::tree::create_new_tree(&game, 4);
+
+    tree.rollback();
+    print!("{:?}", tree);
 }
