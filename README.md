@@ -6,6 +6,7 @@ TODO:
 
 - allow setting board state via position string from file
 - test game, add logging
+- test node counting..
 
 ## Board Position Strings
 

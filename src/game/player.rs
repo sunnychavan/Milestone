@@ -90,7 +90,7 @@ impl Player for AI {
     }
 
     fn one_turn(&self, state: &mut State) {
-        let depth = 4;
+        let depth = 7;
         println!("AI thinking...)");
         let mut tree = create_eval_tree(state, 4);
         let (Move::Diagonal(origin, dest) | Move::Straight(origin, dest)) =

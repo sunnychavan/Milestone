@@ -5,7 +5,7 @@ use crate::game::board::Move;
 
 use super::super::game::board::Move::{Diagonal, Straight};
 use super::super::game::gamestate::State;
-use super::heuristics::number_of_pieces;
+use super::heuristics::{number_of_pieces, piece_differential};
 
 pub struct GameNode {
     children: Vec<GameNode>,
@@ -14,7 +14,7 @@ pub struct GameNode {
     best_next_move: Option<Move>,
     pub total_subnodes: u64,
     depth: u8,
-    evaluation: Option<u64>,
+    evaluation: Option<i64>,
 }
 
 impl fmt::Debug for GameNode {
@@ -112,7 +112,7 @@ impl GameNode {
         state: State,
         depth: Option<u8>,
         recent_move: Option<Move>,
-        evaluation: Option<u64>,
+        evaluation: Option<i64>,
     ) -> GameNode {
         GameNode {
             total_subnodes: match &children {
@@ -144,7 +144,7 @@ impl GameNode {
         self.total_subnodes += 1;
     }
 
-    pub fn rollback(&mut self) -> u64 {
+    pub fn rollback(&mut self) -> i64 {
         self.max_value()
     }
 
@@ -153,7 +153,7 @@ impl GameNode {
         self.best_next_move.unwrap()
     }
 
-    fn min_value(&mut self) -> u64 {
+    fn min_value(&mut self) -> i64 {
         let result;
 
         if self.children.len() == 0 {
@@ -171,7 +171,7 @@ impl GameNode {
                 .iter()
                 .map(|elt| match elt.evaluation {
                     Some(v) => (v, elt.recent_move),
-                    None => (u64::MAX, elt.recent_move),
+                    None => (i64::MAX, elt.recent_move),
                 })
                 .min_by(|(x_eval, _), (y_eval, _)| x_eval.cmp(y_eval))
                 .unwrap();
@@ -182,7 +182,7 @@ impl GameNode {
         result
     }
 
-    fn max_value(&mut self) -> u64 {
+    fn max_value(&mut self) -> i64 {
         let result;
 
         if self.children.len() == 0 {
@@ -200,7 +200,7 @@ impl GameNode {
                 .iter()
                 .map(|elt| match elt.evaluation {
                     Some(v) => (v, elt.recent_move),
-                    None => (u64::MIN, elt.recent_move),
+                    None => (i64::MIN, elt.recent_move),
                 })
                 .max_by(|(x_eval, _), (y_eval, _)| x_eval.cmp(y_eval))
                 .unwrap();
@@ -211,11 +211,11 @@ impl GameNode {
         result
     }
 
-    fn evaluate(&mut self) -> u64 {
+    fn evaluate(&mut self) -> i64 {
         match self.evaluation {
             Some(v) => v,
             None => {
-                let result = number_of_pieces(&self.state);
+                let result = piece_differential(&self.state);
                 self.evaluation = Some(result);
                 result
             }
