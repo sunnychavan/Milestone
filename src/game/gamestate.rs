@@ -1,5 +1,6 @@
 use super::{
     board::Board, board::Hole, board::Move, pieces::Piece, player::Player,
+    player::PossiblePlayer,
 };
 use std::fmt;
 
@@ -8,7 +9,7 @@ pub struct State {
     pub active: bool,
     pub current_turn: u8,
     pub board: Board,
-    players: [Player; 2],
+    pub players: [PossiblePlayer; 2],
 }
 
 impl fmt::Debug for State {
@@ -20,7 +21,8 @@ impl fmt::Debug for State {
         let current_player = &self.players[usize::from(self.current_turn)];
         repr.push_str(&format!(
             "current_turn: {} {:?}\n",
-            current_player.name, current_player.pieces
+            current_player.name(),
+            current_player.get_pieces_type()
         ));
 
         repr.push_str(&format!("board: {:?}\n", self.board));
@@ -39,11 +41,12 @@ impl fmt::Display for State {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let mut repr = "Milestone:\n".to_owned();
 
-        let current_player: &Player =
+        let current_player: &dyn Player =
             &self.players[usize::from(self.current_turn)];
         repr.push_str(&format!(
             "  current_turn: {} {:?}\n",
-            current_player.name, current_player.pieces
+            current_player.name(),
+            current_player.get_pieces_type()
         ));
 
         repr.push_str(&format!("  board: {}", self.board));
@@ -53,12 +56,12 @@ impl fmt::Display for State {
 }
 
 impl State {
-    pub fn new(players: [Player; 2]) -> State {
+    pub fn new(players: &[PossiblePlayer; 2]) -> State {
         State {
             active: true,
             current_turn: 0,
             board: Board::new(),
-            players: players,
+            players: players.clone(),
         }
     }
 
@@ -71,7 +74,7 @@ impl State {
         to: usize,
     ) -> Result<bool, &'static str> {
         let current_player_pieces =
-            self.players[usize::from(self.current_turn)].pieces;
+            self.players[usize::from(self.current_turn)].get_pieces_type();
 
         match self.board.possible_move(&from, &to, self.current_turn) {
             Some(m @ Move::Diagonal(_, d)) | Some(m @ Move::Straight(_, d)) => {
@@ -97,7 +100,7 @@ impl State {
         capture: bool,
     ) -> Result<&State, &'static str> {
         let current_player_pieces =
-            self.players[usize::from(self.current_turn)].pieces;
+            self.players[usize::from(self.current_turn)].get_pieces_type();
 
         match (self.can_move(from, to), capture) {
             (Ok(true), true) => {

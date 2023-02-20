@@ -4,8 +4,6 @@
 
 TODO:
 
-- refactor `move` to `can_move` and `move`
-- maybe Move{} should be refactored to include origin and dest
 - allow setting board state via position string from file
 - test game, add logging
 
