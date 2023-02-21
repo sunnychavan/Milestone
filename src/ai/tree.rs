@@ -1,5 +1,5 @@
-use std::fmt;
 use std::iter::Iterator;
+use std::{fmt, num, thread};
 
 use crate::game::board::Move;
 
@@ -67,8 +67,53 @@ pub fn create_eval_tree(state: &State, max_depth: u8) -> GameNode {
         evaluation: None,
     };
 
-    add_all_possible_children(&mut root_node, max_depth);
+    add_all_possible_children_mt(&mut root_node, max_depth);
+    // add_all_possible_children(&mut root_node, max_depth);
     root_node
+}
+
+// the multithreaded implementation of the function with similar name
+fn add_all_possible_children_mt(root: &mut GameNode, max_depth: u8) -> u64 {
+    let mut subtrees = vec![];
+
+    let possible_moves = root.state.current_possible_moves();
+
+    for mv in possible_moves {
+        let (m @ Diagonal(origin, dest) | m @ Straight(origin, dest)) = mv;
+        match root.state.can_move(origin, dest) {
+            // for each possible move, add a new child
+            Ok(_) => {
+                // add new child
+                let new_state = root
+                    .state
+                    .clone()
+                    .move_piece(origin, dest, true)
+                    .unwrap()
+                    .to_owned();
+                subtrees.push(thread::spawn(move || -> GameNode {
+                    let mut new_root =
+                        GameNode::new(None, new_state, Some(1), Some(mv), None);
+                    add_all_possible_children(&mut new_root, max_depth);
+                    new_root
+                }))
+            }
+            Err(_) => {
+                // don't do anything
+            }
+        }
+    }
+    let final_result: Vec<GameNode> =
+        subtrees.into_iter().map(|n| n.join().unwrap()).collect();
+
+    let num_added = final_result
+        .iter()
+        .map(|elt| elt.total_subnodes + 1)
+        .sum::<u64>();
+
+    root.children = final_result;
+    root.total_subnodes += num_added;
+
+    num_added
 }
 
 // the return value is the number of children created
