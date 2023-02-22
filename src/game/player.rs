@@ -1,3 +1,6 @@
+use crate::ai::heuristics::{
+    middle_proximity, piece_differential, win_lose_condition,
+};
 use crate::game::board::Move;
 
 use super::super::ai::tree::create_eval_tree;
@@ -90,9 +93,8 @@ impl Player for AI {
     fn get_pieces_type(&self) -> Piece {
         self.pieces
     }
-
     fn one_turn(&self, state: &mut State) {
-        let depth = 5;
+        let depth = 4;
         println!("AI thinking...");
         let before_tree_creation = Instant::now();
         let mut tree = create_eval_tree(state, depth);
@@ -106,9 +108,22 @@ impl Player for AI {
             after_tree_creation.duration_since(before_tree_creation).as_secs_f32(),
             after_tree_creation.elapsed().as_secs_f32(),
         );
+        println!(
+            "Previous state heuristics (calculated from root node): Win({}), Middle({}), Piece Diff({})",
+            win_lose_condition(state),
+            middle_proximity(state),
+            piece_differential(state),
+        );
         state
             .move_piece(origin, dest, true)
             .expect("could not play the AI-suggested move");
+        // TODO: this is the evaluation for the next turn (calculates the heuristics for the wrong person)
+        // println!(
+        //     "New state heuristics (calculated from root node): Win({}), Middle({}), Piece Diff({})",
+        //     win_lose_condition(state),
+        //     middle_proximity(state),
+        //     piece_differential(state),
+        // );
         println!("{:?}", state);
     }
 }

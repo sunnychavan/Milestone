@@ -294,7 +294,7 @@ fn get_black_moves() -> HashMap<usize, Vec<Move>> {
 
     hm.insert(0, vec![Diagonal(0, 1), Diagonal(0, 2), Straight(0, 4)]);
 
-    hm.insert(1, vec![Diagonal(1, 1), Diagonal(1, 3), Straight(1, 7)]);
+    hm.insert(1, vec![Diagonal(1, 4), Diagonal(1, 3), Straight(1, 7)]);
     hm.insert(2, vec![Diagonal(2, 4), Diagonal(2, 5), Straight(2, 8)]);
 
     hm.insert(3, vec![Diagonal(3, 6), Diagonal(3, 7), Straight(3, 10)]);
