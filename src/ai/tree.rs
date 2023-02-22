@@ -1,11 +1,14 @@
-use std::fmt;
 use std::iter::Iterator;
+use std::ops::Div;
+use std::{fmt, num, thread};
 
 use crate::game::board::Move;
 
 use super::super::game::board::Move::{Diagonal, Straight};
 use super::super::game::gamestate::State;
-use super::heuristics::number_of_pieces;
+use super::heuristics::{
+    middle_proximity, number_of_pieces, piece_differential, win_lose_condition,
+};
 
 pub struct GameNode {
     children: Vec<GameNode>,
@@ -14,7 +17,7 @@ pub struct GameNode {
     best_next_move: Option<Move>,
     pub total_subnodes: u64,
     depth: u8,
-    evaluation: Option<u64>,
+    evaluation: Option<i8>,
 }
 
 impl fmt::Debug for GameNode {
@@ -67,8 +70,53 @@ pub fn create_eval_tree(state: &State, max_depth: u8) -> GameNode {
         evaluation: None,
     };
 
-    add_all_possible_children(&mut root_node, max_depth);
+    add_all_possible_children_mt(&mut root_node, max_depth);
+    // add_all_possible_children(&mut root_node, max_depth);
     root_node
+}
+
+// the multithreaded implementation of the function with similar name
+fn add_all_possible_children_mt(root: &mut GameNode, max_depth: u8) -> u64 {
+    let mut subtrees = vec![];
+
+    let possible_moves = root.state.current_possible_moves();
+
+    for mv in possible_moves {
+        let (m @ Diagonal(origin, dest) | m @ Straight(origin, dest)) = mv;
+        match root.state.can_move(origin, dest) {
+            // for each possible move, add a new child
+            Ok(_) => {
+                // add new child
+                let new_state = root
+                    .state
+                    .clone()
+                    .move_piece(origin, dest, true)
+                    .unwrap()
+                    .to_owned();
+                subtrees.push(thread::spawn(move || -> GameNode {
+                    let mut new_root =
+                        GameNode::new(None, new_state, Some(1), Some(mv), None);
+                    add_all_possible_children(&mut new_root, max_depth);
+                    new_root
+                }))
+            }
+            Err(_) => {
+                // don't do anything
+            }
+        }
+    }
+    let final_result: Vec<GameNode> =
+        subtrees.into_iter().map(|n| n.join().unwrap()).collect();
+
+    let num_added = final_result
+        .iter()
+        .map(|elt| elt.total_subnodes + 1)
+        .sum::<u64>();
+
+    root.children = final_result;
+    root.total_subnodes += num_added;
+
+    num_added
 }
 
 // the return value is the number of children created
@@ -112,7 +160,7 @@ impl GameNode {
         state: State,
         depth: Option<u8>,
         recent_move: Option<Move>,
-        evaluation: Option<u64>,
+        evaluation: Option<i8>,
     ) -> GameNode {
         GameNode {
             total_subnodes: match &children {
@@ -144,7 +192,7 @@ impl GameNode {
         self.total_subnodes += 1;
     }
 
-    pub fn rollback(&mut self) -> u64 {
+    pub fn rollback(&mut self) -> i8 {
         self.max_value()
     }
 
@@ -153,7 +201,7 @@ impl GameNode {
         self.best_next_move.unwrap()
     }
 
-    fn min_value(&mut self) -> u64 {
+    fn min_value(&mut self) -> i8 {
         let result;
 
         if self.children.len() == 0 {
@@ -171,7 +219,7 @@ impl GameNode {
                 .iter()
                 .map(|elt| match elt.evaluation {
                     Some(v) => (v, elt.recent_move),
-                    None => (u64::MAX, elt.recent_move),
+                    None => (i8::MAX, elt.recent_move),
                 })
                 .min_by(|(x_eval, _), (y_eval, _)| x_eval.cmp(y_eval))
                 .unwrap();
@@ -182,7 +230,7 @@ impl GameNode {
         result
     }
 
-    fn max_value(&mut self) -> u64 {
+    fn max_value(&mut self) -> i8 {
         let result;
 
         if self.children.len() == 0 {
@@ -200,7 +248,7 @@ impl GameNode {
                 .iter()
                 .map(|elt| match elt.evaluation {
                     Some(v) => (v, elt.recent_move),
-                    None => (u64::MIN, elt.recent_move),
+                    None => (i8::MIN, elt.recent_move),
                 })
                 .max_by(|(x_eval, _), (y_eval, _)| x_eval.cmp(y_eval))
                 .unwrap();
@@ -211,11 +259,13 @@ impl GameNode {
         result
     }
 
-    fn evaluate(&mut self) -> u64 {
+    fn evaluate(&mut self) -> i8 {
         match self.evaluation {
             Some(v) => v,
             None => {
-                let result = number_of_pieces(&self.state);
+                let result = (win_lose_condition(&self.state).div(3)
+                    + middle_proximity(&self.state).div(3)
+                    + piece_differential(&self.state).div(3));
                 self.evaluation = Some(result);
                 result
             }

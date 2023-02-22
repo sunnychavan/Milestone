@@ -6,6 +6,12 @@ TODO:
 
 - allow setting board state via position string from file
 - test game, add logging
+- fix print/logs from the AI's move
+  - include information about the tree that was constructed?
+- formalize heuristic interface, make combined heuristic builder
+- measure performance impact of other forms of building the tree (storing moves
+  made and rolling them forward/back)
+- add a/b pruning
 
 ## Board Position Strings
 

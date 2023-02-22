@@ -294,7 +294,7 @@ fn get_black_moves() -> HashMap<usize, Vec<Move>> {
 
     hm.insert(0, vec![Diagonal(0, 1), Diagonal(0, 2), Straight(0, 4)]);
 
-    hm.insert(1, vec![Diagonal(1, 1), Diagonal(1, 3), Straight(1, 7)]);
+    hm.insert(1, vec![Diagonal(1, 4), Diagonal(1, 3), Straight(1, 7)]);
     hm.insert(2, vec![Diagonal(2, 4), Diagonal(2, 5), Straight(2, 8)]);
 
     hm.insert(3, vec![Diagonal(3, 6), Diagonal(3, 7), Straight(3, 10)]);
@@ -328,7 +328,7 @@ fn get_black_moves() -> HashMap<usize, Vec<Move>> {
         15,
         vec![Diagonal(15, 18), Diagonal(15, 19), Straight(15, 22)],
     );
-    hm.insert(16, vec![Diagonal(16, 23), Straight(16, 26)]);
+    hm.insert(16, vec![Diagonal(16, 19), Straight(16, 23)]);
 
     hm.insert(
         17,
@@ -374,7 +374,7 @@ fn get_black_moves() -> HashMap<usize, Vec<Move>> {
     );
     hm.insert(
         29,
-        vec![Diagonal(29, 32), Diagonal(29, 33), Straight(29, 25)],
+        vec![Diagonal(29, 32), Diagonal(29, 33), Straight(29, 35)],
     );
     hm.insert(30, vec![Diagonal(30, 33)]);
 
@@ -482,7 +482,7 @@ fn get_white_moves() -> HashMap<usize, Vec<Move>> {
 
     hm.insert(12, vec![Diagonal(12, 9), Diagonal(12, 8), Straight(12, 5)]);
     hm.insert(11, vec![Diagonal(11, 8), Diagonal(11, 7), Straight(11, 4)]);
-    hm.insert(10, vec![Diagonal(10, 7), Diagonal(10, 5), Straight(10, 3)]);
+    hm.insert(10, vec![Diagonal(10, 7), Diagonal(10, 6), Straight(10, 3)]);
 
     hm.insert(9, vec![Diagonal(9, 5)]);
     hm.insert(8, vec![Diagonal(8, 5), Diagonal(8, 4), Straight(8, 2)]);

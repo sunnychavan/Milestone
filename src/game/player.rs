@@ -1,10 +1,15 @@
+use crate::ai::heuristics::{
+    middle_proximity, piece_differential, win_lose_condition,
+};
 use crate::game::board::Move;
 
 use super::super::ai::tree::create_eval_tree;
 
 use super::{gamestate::State, pieces::Piece};
 use core::fmt::Debug;
+use separator::Separatable;
 use std::io;
+use std::time::Instant;
 
 #[derive(Debug, Clone)]
 pub struct Person {
@@ -88,20 +93,37 @@ impl Player for AI {
     fn get_pieces_type(&self) -> Piece {
         self.pieces
     }
-
     fn one_turn(&self, state: &mut State) {
         let depth = 4;
-        println!("AI thinking...)");
-        let mut tree = create_eval_tree(state, 4);
+        println!("AI thinking...");
+        let before_tree_creation = Instant::now();
+        let mut tree = create_eval_tree(state, depth);
+        let after_tree_creation = Instant::now();
         let (Move::Diagonal(origin, dest) | Move::Straight(origin, dest)) =
             tree.get_best_move();
         println!(
-            "AI suggested {}-{} (depth of {}, {} total nodes)",
-            origin, dest, depth, tree.total_subnodes
+            "AI suggested {}-{} (depth of {}, {} total nodes) in {:.2} seconds ({:.3} to build, {:.3} to evaluate)",
+            origin, dest, depth, tree.total_subnodes.separated_string(),
+            before_tree_creation.elapsed().as_secs_f32(),
+            after_tree_creation.duration_since(before_tree_creation).as_secs_f32(),
+            after_tree_creation.elapsed().as_secs_f32(),
+        );
+        println!(
+            "Previous state heuristics (calculated from root node): Win({}), Middle({}), Piece Diff({})",
+            win_lose_condition(state),
+            middle_proximity(state),
+            piece_differential(state),
         );
         state
             .move_piece(origin, dest, true)
             .expect("could not play the AI-suggested move");
+        // TODO: this is the evaluation for the next turn (calculates the heuristics for the wrong person)
+        // println!(
+        //     "New state heuristics (calculated from root node): Win({}), Middle({}), Piece Diff({})",
+        //     win_lose_condition(state),
+        //     middle_proximity(state),
+        //     piece_differential(state),
+        // );
         println!("{:?}", state);
     }
 }
