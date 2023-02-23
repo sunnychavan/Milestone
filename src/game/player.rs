@@ -110,20 +110,21 @@ impl Player for AI {
         );
         println!(
             "Previous state heuristics (calculated from root node): Win({}), Middle({}), Piece Diff({})",
-            win_lose_condition(state),
-            middle_proximity(state),
-            piece_differential(state),
+            win_lose_condition(state, state.current_turn),
+            middle_proximity(state, state.current_turn),
+            piece_differential(state, state.current_turn),
         );
         state
             .move_piece(origin, dest, true)
             .expect("could not play the AI-suggested move");
+
         // TODO: this is the evaluation for the next turn (calculates the heuristics for the wrong person)
-        // println!(
-        //     "New state heuristics (calculated from root node): Win({}), Middle({}), Piece Diff({})",
-        //     win_lose_condition(state),
-        //     middle_proximity(state),
-        //     piece_differential(state),
-        // );
+        println!(
+            "New state heuristics (calculated from root node): Win({}), Middle({}), Piece Diff({})",
+            win_lose_condition(state, 1-state.current_turn),
+            middle_proximity(state, 1-state.current_turn),
+            piece_differential(state, 1-state.current_turn),
+        );
         println!("{:?}", state);
     }
 }

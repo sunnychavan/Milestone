@@ -19,16 +19,16 @@ pub fn number_of_pieces(state: &State) -> i8 {
     unsigned100_normalize(0, 10, raw_score)
 }
 
-pub fn piece_differential(state: &State) -> i8 {
+pub fn piece_differential(state: &State, turn:u8) -> i8 {
     let current_player_num = state
         .board
-        .current_players_pieces(state.current_turn)
+        .current_players_pieces(turn)
         .len()
         .try_into()
         .unwrap_or(0);
     let opponent_num = state
         .board
-        .current_players_pieces(1 - state.current_turn)
+        .current_players_pieces(1 - turn)
         .len()
         .try_into()
         .unwrap_or(0);
@@ -36,7 +36,7 @@ pub fn piece_differential(state: &State) -> i8 {
     unsigned100_normalize(-10, 10, current_player_num - opponent_num)
 }
 
-pub fn middle_proximity(state: &State) -> i8 {
+pub fn middle_proximity(state: &State, turn:u8) -> i8 {
     let mut middle_proximity: HashMap<usize, i64> = HashMap::new();
     middle_proximity.insert(0, 3);
     middle_proximity.insert(4, 3);
@@ -81,7 +81,7 @@ pub fn middle_proximity(state: &State) -> i8 {
 
     let raw_val = state
         .board
-        .current_players_pieces(state.current_turn)
+        .current_players_pieces(turn)
         .iter()
         .map(|&elt| middle_proximity.get(&elt).unwrap_or(&0))
         .sum();
@@ -89,8 +89,8 @@ pub fn middle_proximity(state: &State) -> i8 {
     unsigned100_normalize(0, 55, raw_val)
 }
 
-pub fn win_lose_condition(state: &State) -> i8 {
-    let current_player = &state.players[state.current_turn as usize];
+pub fn win_lose_condition(state: &State, turn:u8) -> i8 {
+    let current_player = &state.players[turn as usize];
 
     // don't need to normalize
     let blacks_home = state.board.board[0];

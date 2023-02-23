@@ -263,9 +263,9 @@ impl GameNode {
         match self.evaluation {
             Some(v) => v,
             None => {
-                let result = (win_lose_condition(&self.state).div(3)
-                    + middle_proximity(&self.state).div(3)
-                    + piece_differential(&self.state).div(3));
+                let result = (win_lose_condition(&self.state, self.state.current_turn).div(3)
+                    + middle_proximity(&self.state, self.state.current_turn).div(3)
+                    + piece_differential(&self.state, self.state.current_turn).div(3));
                 self.evaluation = Some(result);
                 result
             }
