@@ -7,7 +7,7 @@ use crate::game::board::Move;
 use super::super::game::board::Move::{Diagonal, Straight};
 use super::super::game::gamestate::State;
 use super::heuristics::{
-    middle_proximity, number_of_pieces, piece_differential, win_lose_condition,
+    middle_proximity, number_of_pieces, piece_differential, win_lose_condition, hold_important_pieces
 };
 
 pub struct GameNode {
@@ -265,7 +265,8 @@ impl GameNode {
             None => {
                 let result = (win_lose_condition(&self.state, self.state.current_turn).div(3)
                     + middle_proximity(&self.state, self.state.current_turn).div(3)
-                    + piece_differential(&self.state, self.state.current_turn).div(3));
+                    + piece_differential(&self.state, self.state.current_turn).div(3)
+                + hold_important_pieces(&self.state, self.state.current_turn).div(3));
                 self.evaluation = Some(result);
                 result
             }

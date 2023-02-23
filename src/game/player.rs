@@ -1,5 +1,5 @@
 use crate::ai::heuristics::{
-    middle_proximity, piece_differential, win_lose_condition,
+    middle_proximity, piece_differential, win_lose_condition, hold_important_pieces
 };
 use crate::game::board::Move;
 
@@ -109,10 +109,11 @@ impl Player for AI {
             after_tree_creation.elapsed().as_secs_f32(),
         );
         println!(
-            "Previous state heuristics (calculated from root node): Win({}), Middle({}), Piece Diff({})",
+            "Previous state heuristics (calculated from root node): Win({}), Middle({}), Piece Diff({}), IP({})",
             win_lose_condition(state, state.current_turn),
             middle_proximity(state, state.current_turn),
             piece_differential(state, state.current_turn),
+            hold_important_pieces(state, state.current_turn)
         );
         state
             .move_piece(origin, dest, true)
@@ -120,10 +121,11 @@ impl Player for AI {
 
         // TODO: this is the evaluation for the next turn (calculates the heuristics for the wrong person)
         println!(
-            "New state heuristics (calculated from root node): Win({}), Middle({}), Piece Diff({})",
+            "New state heuristics (calculated from root node): Win({}), Middle({}), Piece Diff({}), IP({})",
             win_lose_condition(state, 1-state.current_turn),
             middle_proximity(state, 1-state.current_turn),
             piece_differential(state, 1-state.current_turn),
+            hold_important_pieces(state, 1-state.current_turn)
         );
         println!("{:?}", state);
     }

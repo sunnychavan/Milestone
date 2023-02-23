@@ -36,6 +36,32 @@ pub fn piece_differential(state: &State, turn:u8) -> i8 {
     unsigned100_normalize(-10, 10, current_player_num - opponent_num)
 }
 
+pub fn hold_important_pieces(state: &State, turn:u8) -> i8 {
+    let mut important_pieces: HashMap<usize, i64> = HashMap::new();
+    let current_player = &state.players[turn as usize];
+
+    match current_player.get_pieces_type() {
+        Black => {
+            important_pieces.insert(0, 3);
+            important_pieces.insert(1, 2);
+            important_pieces.insert(2, 2);
+        },
+        White => {
+            important_pieces.insert(36, 3);
+            important_pieces.insert(34, 2);
+            important_pieces.insert(35, 2);
+        }
+        }
+        let raw_val = state
+        .board
+        .current_players_pieces(turn)
+        .iter()
+        .map(|&elt| important_pieces.get(&elt).unwrap_or(&0))
+        .sum();
+
+    unsigned100_normalize(0, 7, raw_val)
+    }
+    
 pub fn middle_proximity(state: &State, turn:u8) -> i8 {
     let mut middle_proximity: HashMap<usize, i64> = HashMap::new();
     middle_proximity.insert(0, 3);
@@ -117,3 +143,15 @@ fn unsigned100_normalize(min: i64, max: i64, value: i64) -> i8 {
     i8::try_from(numerator.div(denominator) - 100)
         .expect("downcasting to a i8 failed")
 }
+
+
+// HEURISTIC HELPER FUNCTIONS ( E.G. LOWERBOUND UPPERBOUND CALCULATORS ) //
+
+// pub fn lowerbound_middle_proximity(outermost_weight: i64, next_outermost_weight: i64 ) -> i8 {
+//     8*outermost_weight + 2*next_outermost_weight
+
+// }
+
+// pub fn upperbound_middle_proximity(state: &State, turn:u8) -> i8 {
+
+// }
