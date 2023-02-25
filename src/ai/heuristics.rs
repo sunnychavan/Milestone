@@ -1,5 +1,5 @@
 use std::{
-    collections::HashMap,
+    collections::{HashMap, HashSet},
     ops::{Div, Mul},
 };
 
@@ -64,26 +64,26 @@ pub fn hold_important_pieces(state: &State, turn:u8) -> i8 {
     
 pub fn middle_proximity(state: &State, turn:u8) -> i8 {
     let mut middle_proximity: HashMap<usize, i64> = HashMap::new();
-    middle_proximity.insert(0, 3);
-    middle_proximity.insert(4, 3);
-    middle_proximity.insert(11, 3);
-    middle_proximity.insert(18, 3);
-    middle_proximity.insert(25, 3);
-    middle_proximity.insert(32, 3);
-    middle_proximity.insert(36, 3);
+    middle_proximity.insert(0, 6);
+    middle_proximity.insert(4, 6);
+    middle_proximity.insert(11, 6);
+    middle_proximity.insert(18, 6);
+    middle_proximity.insert(25, 6);
+    middle_proximity.insert(32, 6);
+    middle_proximity.insert(36, 6);
 
-    middle_proximity.insert(1, 2);
-    middle_proximity.insert(2, 2);
-    middle_proximity.insert(7, 2);
-    middle_proximity.insert(8, 2);
-    middle_proximity.insert(14, 2);
-    middle_proximity.insert(15, 2);
-    middle_proximity.insert(21, 2);
-    middle_proximity.insert(22, 2);
-    middle_proximity.insert(28, 2);
-    middle_proximity.insert(29, 2);
-    middle_proximity.insert(34, 2);
-    middle_proximity.insert(35, 2);
+    middle_proximity.insert(1, 3);
+    middle_proximity.insert(2, 3);
+    middle_proximity.insert(7, 3);
+    middle_proximity.insert(8, 3);
+    middle_proximity.insert(14, 3);
+    middle_proximity.insert(15, 3);
+    middle_proximity.insert(21, 3);
+    middle_proximity.insert(22, 3);
+    middle_proximity.insert(28, 3);
+    middle_proximity.insert(29, 3);
+    middle_proximity.insert(34, 3);
+    middle_proximity.insert(35, 3);
 
     middle_proximity.insert(3, 1);
     middle_proximity.insert(5, 1);
@@ -112,7 +112,45 @@ pub fn middle_proximity(state: &State, turn:u8) -> i8 {
         .map(|&elt| middle_proximity.get(&elt).unwrap_or(&0))
         .sum();
 
-    unsigned100_normalize(0, 55, raw_val)
+    unsigned100_normalize(lowerbound_middle_proximity(), upperbound_middle_proximity(6, 3), raw_val)
+}
+
+pub fn middle_piece_differential(state: &State, turn:u8) -> i8 {
+    let mut middle_pieces = HashSet::new();
+    middle_pieces.insert(0);
+    middle_pieces.insert(4);
+    middle_pieces.insert(11);
+    middle_pieces.insert(18);
+    middle_pieces.insert(25);
+    middle_pieces.insert(32);
+    middle_pieces.insert(36);
+
+    let current_player_num: i64 = state
+    .board
+    .current_players_pieces(turn)
+    .iter()
+    .map(|&elt| {
+        if middle_pieces.contains(&elt){
+            1
+        }
+        else{
+            0
+        }
+    } ).sum();
+
+    let opponent_player_num: i64 = state
+    .board
+    .current_players_pieces(1 - turn)
+    .iter()
+    .map(|&elt| {
+        if middle_pieces.contains(&elt){
+            1
+        }
+        else{
+            0
+        }
+    } ).sum();
+    unsigned100_normalize(-7, 7, current_player_num - opponent_player_num)
 }
 
 pub fn win_lose_condition(state: &State, turn:u8) -> i8 {
@@ -147,11 +185,10 @@ fn unsigned100_normalize(min: i64, max: i64, value: i64) -> i8 {
 
 // HEURISTIC HELPER FUNCTIONS ( E.G. LOWERBOUND UPPERBOUND CALCULATORS ) //
 
-// pub fn lowerbound_middle_proximity(outermost_weight: i64, next_outermost_weight: i64 ) -> i8 {
-//     8*outermost_weight + 2*next_outermost_weight
+pub fn lowerbound_middle_proximity() -> i64 {
+    0
+}
 
-// }
-
-// pub fn upperbound_middle_proximity(state: &State, turn:u8) -> i8 {
-
-// }
+pub fn upperbound_middle_proximity(middle_weight: i64, next_middle_weight: i64 ) -> i64 {
+    7*middle_weight + 3*next_middle_weight
+}
