@@ -1,5 +1,6 @@
 use super::{
-    board::Board, board::Hole, board::Move, pieces::Piece, player::Player,
+    board::Board, board::Hole, board::Move, board::Move::Diagonal,
+    board::Move::Straight, pieces::Piece, player::Player,
     player::PossiblePlayer,
 };
 use std::fmt;
@@ -98,21 +99,21 @@ impl State {
         from: usize,
         to: usize,
         capture: bool,
-    ) -> Result<&State, &'static str> {
+    ) -> Result<(), &'static str> {
         let current_player_pieces =
             self.players[usize::from(self.current_turn)].get_pieces_type();
 
         match (self.can_move(from, to), capture) {
             (Ok(true), true) => {
                 self.move_piece_aux(from, to, current_player_pieces);
-                Ok(self)
+                Ok(())
             }
             (Ok(true), false) => {
                 Err("you don't have permission to capture this piece")
             }
             (Ok(false), _) => {
                 self.move_piece_aux(from, to, current_player_pieces);
-                Ok(self)
+                Ok(())
             }
             (Err(e), _) => Err(e),
         }
@@ -140,5 +141,14 @@ impl State {
 
     pub fn current_possible_moves(&self) -> Vec<Move> {
         Board::all_valid_moves(&self.board, self.current_turn)
+            .into_iter()
+            .filter(|&m| {
+                let (Diagonal(origin, dest) | Straight(origin, dest)) = m;
+                match self.can_move(origin, dest) {
+                    Ok(_) => true,
+                    _ => false,
+                }
+            })
+            .collect::<Vec<Move>>()
     }
 }

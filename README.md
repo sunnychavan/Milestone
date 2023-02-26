@@ -4,6 +4,9 @@
 
 TODO:
 
+- reintroduce caching of evaluation (via Options)
+- enable the player (at the CLI) an option to print the evaluation tree from the
+  previous move
 - allow setting board state via position string from file
 - test game, add logging
 - fix print/logs from the AI's move

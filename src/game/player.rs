@@ -3,11 +3,12 @@ use crate::ai::heuristics::{
 };
 use crate::game::board::Move;
 
-use super::super::ai::tree::create_eval_tree;
+use crate::ai::tree::GameTree;
 
 use super::{gamestate::State, pieces::Piece};
 use core::fmt::Debug;
 use separator::Separatable;
+use std::fs::File;
 use std::io;
 use std::time::Instant;
 
@@ -59,7 +60,7 @@ impl Player for Person {
 fn handle_move_input<'a>(
     game: &'a mut State,
     input: &str,
-) -> Result<&'a State, &'static str> {
+) -> Result<(), &'static str> {
     match input.split('-').collect::<Vec<&str>>()[..] {
         [a, b] => {
             let from = a.parse::<usize>();
@@ -94,16 +95,19 @@ impl Player for AI {
         self.pieces
     }
     fn one_turn(&self, state: &mut State) {
-        let depth = 4;
+        let depth = 2;
         println!("AI thinking...");
         let before_tree_creation = Instant::now();
-        let mut tree = create_eval_tree(state, depth);
+        let mut tree = GameTree::new(state.to_owned(), depth);
+        tree.build_eval_tree();
+        println!("Game tree constructed");
         let after_tree_creation = Instant::now();
         let (Move::Diagonal(origin, dest) | Move::Straight(origin, dest)) =
-            tree.get_best_move();
+            tree.rollback();
+        tree.svg_from_tree();
         println!(
             "AI suggested {}-{} (depth of {}, {} total nodes) in {:.2} seconds ({:.3} to build, {:.3} to evaluate)",
-            origin, dest, depth, tree.total_subnodes.separated_string(),
+            origin, dest, depth, tree.total_subnodes().separated_string(),
             before_tree_creation.elapsed().as_secs_f32(),
             after_tree_creation.duration_since(before_tree_creation).as_secs_f32(),
             after_tree_creation.elapsed().as_secs_f32(),
