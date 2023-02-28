@@ -264,10 +264,10 @@ impl GameNode {
             Some(v) => v,
             None => {
                 let result = (win_lose_condition(&self.state, self.state.current_turn).div(5)
-                    + middle_proximity(&self.state, self.state.current_turn).div(3)
-                    + middle_piece_differential(&self.state, self.state.current_turn).div(3)
+                    + middle_proximity(&self.state, self.state.current_turn).div(5)
+                    + middle_piece_differential(&self.state, self.state.current_turn).div(5)
                     + piece_differential(&self.state, self.state.current_turn).div(5)
-                + hold_important_pieces(&self.state, self.state.current_turn).div(6));
+                + hold_important_pieces(&self.state, self.state.current_turn).div(5));
                 self.evaluation = Some(result);
                 result
             }

@@ -43,13 +43,13 @@ pub fn hold_important_pieces(state: &State, turn:u8) -> i8 {
     match current_player.get_pieces_type() {
         Black => {
             important_pieces.insert(0, 3);
-            important_pieces.insert(1, 2);
-            important_pieces.insert(2, 2);
+            important_pieces.insert(1, 1);
+            important_pieces.insert(2, 1);
         },
         White => {
             important_pieces.insert(36, 3);
-            important_pieces.insert(34, 2);
-            important_pieces.insert(35, 2);
+            important_pieces.insert(34, 1);
+            important_pieces.insert(35, 1);
         }
         }
         let raw_val = state
@@ -59,7 +59,7 @@ pub fn hold_important_pieces(state: &State, turn:u8) -> i8 {
         .map(|&elt| important_pieces.get(&elt).unwrap_or(&0))
         .sum();
 
-    unsigned100_normalize(0, 7, raw_val)
+    unsigned100_normalize(0, 5, raw_val)
     }
     
 pub fn middle_proximity(state: &State, turn:u8) -> i8 {
