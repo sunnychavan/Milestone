@@ -170,7 +170,6 @@ impl GameNode {
     }
 
     fn evaluate(&self) -> i8 {
-        // return 7;
         return (win_lose_condition(&self.state, self.state.current_turn)
             .div(5)
             + middle_proximity(&self.state, self.state.current_turn).div(5)

@@ -77,12 +77,16 @@ impl State {
         let current_player_pieces =
             self.players[usize::from(self.current_turn)].get_pieces_type();
 
-        let valid_start: bool = self.board.current_players_pieces(self.current_turn).contains(&from);
-        
+        let valid_start: bool = self
+            .board
+            .current_players_pieces(self.current_turn)
+            .contains(&from);
+
         if valid_start {
-        match self.board.possible_move(&from, &to, self.current_turn) {
-            Some(m @ Move::Diagonal(a, d)) | Some(m @ Move::Straight(a, d)) => {
-                match self.board.board[d].0 {
+            match self.board.possible_move(&from, &to, self.current_turn) {
+                Some(m @ Move::Diagonal(a, d))
+                | Some(m @ Move::Straight(a, d)) => {
+                    match self.board.board[d].0 {
                     Some(existing_piece) if existing_piece == current_player_pieces => {
                         Err("can't occupy the same space as another one of your pieces")
                     }
@@ -92,12 +96,13 @@ impl State {
                     },
                     None => Ok(false),
                 }
+                }
+                None => {
+                    Err("not a legal move for this piece or it's not your turn")
+                }
             }
-            None => Err("not a legal move for this piece or it's not your turn"),
-        }
-        }
-        else{
-          Err("Not a legal move. No pieces at the starting space specified")
+        } else {
+            Err("Not a legal move. No pieces at the starting space specified")
         }
     }
 
