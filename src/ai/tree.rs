@@ -18,7 +18,8 @@ use crate::game::board::Move;
 use super::super::game::board::Move::{Diagonal, Straight};
 use super::super::game::gamestate::State;
 use super::heuristics::{
-    middle_proximity, number_of_pieces, piece_differential, win_lose_condition, hold_important_pieces, middle_piece_differential
+    hold_important_pieces, middle_piece_differential, middle_proximity,
+    number_of_pieces, piece_differential, win_lose_condition,
 };
 
 #[derive(Debug, Clone)]
@@ -109,17 +110,13 @@ impl GameTree {
             return (root_node.evaluate(), None);
         } else {
             // to maximize this node, minimize its children
-            for mv in outgoing_moves {
-                self.min_value(mv.target());
-            }
-
             let best_move;
             (result, best_move) = self
                 .tree
                 .edges(root_idx)
                 .map(|edge| {
                     let d = edge.target();
-                    (self.tree.index(d).evaluate(), edge.weight())
+                    (self.min_value(d).0, edge.weight())
                 })
                 .max_by_key(|elt| elt.0)
                 .unwrap();
@@ -137,17 +134,13 @@ impl GameTree {
             return (root_node.evaluate(), None);
         } else {
             // to minimize this node, maximize its children
-            for mv in outgoing_moves {
-                self.max_value(mv.target());
-            }
-
             let best_move;
             (result, best_move) = self
                 .tree
                 .edges(root_idx)
                 .map(|edge| {
                     let d = edge.target();
-                    (self.tree.index(d).evaluate(), edge.weight())
+                    (self.max_value(d).0, edge.weight())
                 })
                 .min_by_key(|elt| elt.0)
                 .unwrap();
@@ -156,55 +149,10 @@ impl GameTree {
     }
 
     pub fn rollback(&mut self) -> Move {
-        self.min_value(self.tree_root_idx)
+        self.max_value(self.tree_root_idx)
             .1
             .expect("the best value didn't have an associated move")
             .to_owned()
-    }
-
-    pub fn minimax(&mut self) -> Move {
-        let mut best_move: Option<Move> = None;
-        let mut best_score: Option<i8> = None;
-
-        let mut dfs = Dfs::new(&self.tree, self.tree_root_idx);
-        while let Some(node_idx) = dfs.next(&self.tree) {
-            let node_value = &self.tree[node_idx];
-            match node_value.depth % 2 {
-                // if even, we maximize
-                0 => {
-                    for out_edge in self.tree.edges(node_idx) {
-                        let child_node_index = out_edge.target();
-                        let child_score =
-                            self.tree[child_node_index].evaluate();
-                        if best_score.is_none()
-                            || child_score < best_score.unwrap()
-                        {
-                            best_score = Some(child_score);
-                            best_move = Some(out_edge.weight().clone());
-                        }
-                    }
-                }
-                // if odd, we minimize
-                1 => {
-                    for out_edge in self.tree.edges(node_idx) {
-                        let child_node_index = out_edge.target();
-                        let child_score =
-                            self.tree[child_node_index].evaluate();
-                        if best_score.is_none()
-                            || child_score > best_score.unwrap()
-                        {
-                            best_score = Some(child_score);
-                            // best_move = Some(out_edge.weight().clone());
-                        }
-                    }
-                }
-                _ => panic!(
-                    "a number mod 2 cannot be anything other than 0 or 1"
-                ),
-            }
-        }
-
-        best_move.unwrap()
     }
 
     pub fn total_subnodes(&self) -> usize {
@@ -222,11 +170,15 @@ impl GameNode {
     }
 
     fn evaluate(&self) -> i8 {
-        return (win_lose_condition(&self.state, self.state.current_turn).div(5)
-                    + middle_proximity(&self.state, self.state.current_turn).div(5)
-                    + middle_piece_differential(&self.state, self.state.current_turn).div(5)
-                    + piece_differential(&self.state, self.state.current_turn).div(5)
-                + hold_important_pieces(&self.state, self.state.current_turn).div(5));
+        return 7;
+        // return (win_lose_condition(&self.state, self.state.current_turn)
+        //     .div(5)
+        //     + middle_proximity(&self.state, self.state.current_turn).div(5)
+        //     + middle_piece_differential(&self.state, self.state.current_turn)
+        //         .div(5)
+        //     + piece_differential(&self.state, self.state.current_turn).div(5)
+        //     + hold_important_pieces(&self.state, self.state.current_turn)
+        //         .div(5));
     }
 }
 

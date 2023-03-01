@@ -4,6 +4,7 @@
 
 TODO:
 
+- need to combine in minimax (rather than just look at d + 1)
 - reintroduce caching of evaluation (via Options)
 - enable the player (at the CLI) an option to print the evaluation tree from the
   previous move

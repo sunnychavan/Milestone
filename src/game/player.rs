@@ -1,5 +1,6 @@
 use crate::ai::heuristics::{
-    middle_proximity, piece_differential, win_lose_condition, hold_important_pieces, middle_piece_differential
+    hold_important_pieces, middle_piece_differential, middle_proximity,
+    piece_differential, win_lose_condition,
 };
 use crate::game::board::Move;
 
@@ -95,7 +96,7 @@ impl Player for AI {
         self.pieces
     }
     fn one_turn(&self, state: &mut State) {
-        let depth = 2;
+        let depth = 4;
         println!("AI thinking...");
         let before_tree_creation = Instant::now();
         let mut tree = GameTree::new(state.to_owned(), depth);
