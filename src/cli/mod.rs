@@ -13,7 +13,7 @@ pub fn choose_type_of_game() -> State {
                \n\t(0) to have two AIs play each other"
     );
 
-    let mut gb = GameBuilder::new();
+    let gb = GameBuilder::new();
     let mut input = String::new();
     match io::stdin().read_line(&mut input) {
         Ok(_) => {

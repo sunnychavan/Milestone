@@ -1,41 +1,36 @@
-use petgraph::dot::{Dot};
+use petgraph::dot::Dot;
 use petgraph::graph::DiGraph;
 use petgraph::graph::NodeIndex;
-use petgraph::visit::{EdgeRef};
-
+use petgraph::visit::EdgeRef;
 
 use std::fs::File;
-use std::io::{Write};
+use std::io::Write;
 use std::process::Command;
 use std::process::Stdio;
 
 use std::iter::Iterator;
 use std::ops::{Div, Index};
 
-
 use crate::game::board::Move;
 
 use super::super::game::board::Move::{Diagonal, Straight};
 use super::super::game::gamestate::State;
 use super::heuristics::{
-    hold_important_pieces, middle_piece_differential, middle_proximity, piece_differential, win_lose_condition,
+    hold_important_pieces, middle_piece_differential, middle_proximity,
+    piece_differential, win_lose_condition,
 };
 
 #[derive(Debug, Clone)]
 pub struct GameTree {
     tree: DiGraph<GameNode, Move>,
     tree_root_idx: NodeIndex,
-    base_state: State,
     max_depth: u8,
-    best_move: Option<Move>,
-    evaluation: Option<i8>,
 }
 
 #[derive(Debug, Clone)]
 pub struct GameNode {
     state: State,
     depth: u8,
-    evaluation: Option<i8>,
 }
 
 impl GameTree {
@@ -45,10 +40,7 @@ impl GameTree {
         GameTree {
             tree_root_idx: tree.add_node(GameNode::new(0, base_state.clone())),
             tree,
-            base_state: base_state,
             max_depth,
-            best_move: None,
-            evaluation: None,
         }
     }
 
@@ -67,7 +59,9 @@ impl GameTree {
             &self.tree,
             &[],
             &|_, _| "".to_owned(),
-            &|_, (_ni, gamenode)| format!("label = \"{}\"", gamenode.evaluate()),
+            &|_, (_ni, gamenode)| {
+                format!("label = \"{}\"", gamenode.evaluate())
+            },
         );
         // let dot = Dot::new(&self.tree);
         write!(file, "{:?}", dot).expect("failed to write to input file");
@@ -161,16 +155,11 @@ impl GameTree {
 
 impl GameNode {
     pub fn new(depth: u8, state: State) -> GameNode {
-        GameNode {
-            depth,
-            evaluation: None,
-            state,
-        }
+        GameNode { depth, state }
     }
 
     fn evaluate(&self) -> i8 {
-        return win_lose_condition(&self.state, self.state.current_turn)
-            .div(5)
+        return win_lose_condition(&self.state, self.state.current_turn).div(5)
             + middle_proximity(&self.state, self.state.current_turn).div(5)
             + middle_piece_differential(&self.state, self.state.current_turn)
                 .div(5)

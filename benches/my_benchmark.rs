@@ -1,10 +1,9 @@
 use criterion::{black_box, criterion_group, criterion_main, Criterion};
 use milestone::{
     self,
-    ai::tree::{GameNode, GameTree},
+    ai::tree::{GameTree},
     game::{
         gamestate::{GameBuilder, State},
-        pieces::Piece,
         player::{PossiblePlayer, AI},
     },
 };
