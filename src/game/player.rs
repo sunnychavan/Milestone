@@ -96,7 +96,7 @@ impl Player for AI {
         self.pieces
     }
     fn one_turn(&self, state: &mut State) {
-        let depth = 4;
+        let depth = 5;
         println!("AI thinking...");
         let before_tree_creation = Instant::now();
         let mut tree = GameTree::new(state.to_owned(), depth);
@@ -105,7 +105,7 @@ impl Player for AI {
         let after_tree_creation = Instant::now();
         let (Move::Diagonal(origin, dest) | Move::Straight(origin, dest)) =
             tree.rollback();
-        tree.svg_from_tree();
+        // tree.svg_from_tree();
         println!(
             "AI suggested {}-{} (depth of {}, {} total nodes) in {:.2} seconds ({:.3} to build, {:.3} to evaluate)",
             origin, dest, depth, tree.total_subnodes().separated_string(),

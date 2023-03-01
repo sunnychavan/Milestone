@@ -170,15 +170,15 @@ impl GameNode {
     }
 
     fn evaluate(&self) -> i8 {
-        return 7;
-        // return (win_lose_condition(&self.state, self.state.current_turn)
-        //     .div(5)
-        //     + middle_proximity(&self.state, self.state.current_turn).div(5)
-        //     + middle_piece_differential(&self.state, self.state.current_turn)
-        //         .div(5)
-        //     + piece_differential(&self.state, self.state.current_turn).div(5)
-        //     + hold_important_pieces(&self.state, self.state.current_turn)
-        //         .div(5));
+        // return 7;
+        return (win_lose_condition(&self.state, self.state.current_turn)
+            .div(5)
+            + middle_proximity(&self.state, self.state.current_turn).div(5)
+            + middle_piece_differential(&self.state, self.state.current_turn)
+                .div(5)
+            + piece_differential(&self.state, self.state.current_turn).div(5)
+            + hold_important_pieces(&self.state, self.state.current_turn)
+                .div(5));
     }
 }
 
