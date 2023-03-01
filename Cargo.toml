@@ -3,7 +3,20 @@ name = "milestone"
 version = "0.1.0"
 edition = "2021"
 
+[lib]
+name = "milestone"
+path = "src/main.rs"
+
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
 separator = "0.4.1"
+petgraph = "0.6.3"
+lazy_static = "1.4.0"
+
+[dev-dependencies]
+criterion = "0.4"
+
+[[bench]]
+name = "my_benchmark"
+harness = false

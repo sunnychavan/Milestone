@@ -1,5 +1,6 @@
 use super::{
-    board::Board, board::Hole, board::Move, pieces::Piece, player::Player,
+    board::Board, board::Hole, board::Move, board::Move::Diagonal,
+    board::Move::Straight, pieces::Piece, player::Player,
     player::PossiblePlayer,
 };
 use std::fmt;
@@ -76,12 +77,16 @@ impl State {
         let current_player_pieces =
             self.players[usize::from(self.current_turn)].get_pieces_type();
 
-        let valid_start: bool = self.board.current_players_pieces(self.current_turn).contains(&from);
-        
+        let valid_start: bool = self
+            .board
+            .current_players_pieces(self.current_turn)
+            .contains(&from);
+
         if valid_start {
-        match self.board.possible_move(&from, &to, self.current_turn) {
-            Some(m @ Move::Diagonal(a, d)) | Some(m @ Move::Straight(a, d)) => {
-                match self.board.board[d].0 {
+            match self.board.possible_move(&from, &to, self.current_turn) {
+                Some(m @ Move::Diagonal(a, d))
+                | Some(m @ Move::Straight(a, d)) => {
+                    match self.board.board[d].0 {
                     Some(existing_piece) if existing_piece == current_player_pieces => {
                         Err("can't occupy the same space as another one of your pieces")
                     }
@@ -91,12 +96,13 @@ impl State {
                     },
                     None => Ok(false),
                 }
+                }
+                None => {
+                    Err("not a legal move for this piece or it's not your turn")
+                }
             }
-            None => Err("not a legal move for this piece or it's not your turn"),
-        }
-        }
-        else{
-          Err("Not a legal move. No pieces at the starting space specified")
+        } else {
+            Err("Not a legal move. No pieces at the starting space specified")
         }
     }
 
@@ -105,21 +111,21 @@ impl State {
         from: usize,
         to: usize,
         capture: bool,
-    ) -> Result<&State, &'static str> {
+    ) -> Result<(), &'static str> {
         let current_player_pieces =
             self.players[usize::from(self.current_turn)].get_pieces_type();
 
         match (self.can_move(from, to), capture) {
             (Ok(true), true) => {
                 self.move_piece_aux(from, to, current_player_pieces);
-                Ok(self)
+                Ok(())
             }
             (Ok(true), false) => {
                 Err("you don't have permission to capture this piece")
             }
             (Ok(false), _) => {
                 self.move_piece_aux(from, to, current_player_pieces);
-                Ok(self)
+                Ok(())
             }
             (Err(e), _) => Err(e),
         }
@@ -147,5 +153,14 @@ impl State {
 
     pub fn current_possible_moves(&self) -> Vec<Move> {
         Board::all_valid_moves(&self.board, self.current_turn)
+            .into_iter()
+            .filter(|&m| {
+                let (Diagonal(origin, dest) | Straight(origin, dest)) = m;
+                match self.can_move(origin, dest) {
+                    Ok(_) => true,
+                    _ => false,
+                }
+            })
+            .collect::<Vec<Move>>()
     }
 }
