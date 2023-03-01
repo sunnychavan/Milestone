@@ -18,12 +18,12 @@ impl GameBuilder {
         }
     }
 
-    pub fn set_player_1(&mut self, p: PossiblePlayer) -> &mut GameBuilder {
+    pub fn set_player_1(mut self, p: PossiblePlayer) -> GameBuilder {
         self.players[0] = p;
         self
     }
 
-    pub fn set_player_2(&mut self, p: PossiblePlayer) -> &mut GameBuilder {
+    pub fn set_player_2(mut self, p: PossiblePlayer) -> GameBuilder {
         self.players[1] = p;
         self
     }
@@ -108,8 +108,8 @@ impl State {
 
         if valid_start {
             match self.board.possible_move(&from, &to, self.current_turn) {
-                Some(m @ Move::Diagonal(a, d))
-                | Some(m @ Move::Straight(a, d)) => {
+                Some(m @ Move::Diagonal(_a, d))
+                | Some(m @ Move::Straight(_a, d)) => {
                     match self.board.board[d].0 {
                     Some(existing_piece) if existing_piece == current_player_pieces => {
                         Err("can't occupy the same space as another one of your pieces")

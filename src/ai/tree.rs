@@ -1,25 +1,24 @@
-use petgraph::dot::{Config, Dot};
+use petgraph::dot::{Dot};
 use petgraph::graph::DiGraph;
 use petgraph::graph::NodeIndex;
-use petgraph::visit::{Dfs, EdgeRef};
-use petgraph::Graph;
+use petgraph::visit::{EdgeRef};
+
 
 use std::fs::File;
-use std::io::{BufWriter, Write};
+use std::io::{Write};
 use std::process::Command;
 use std::process::Stdio;
 
 use std::iter::Iterator;
-use std::ops::{Div, Index, IndexMut};
-use std::{fmt, num, thread};
+use std::ops::{Div, Index};
+
 
 use crate::game::board::Move;
 
 use super::super::game::board::Move::{Diagonal, Straight};
 use super::super::game::gamestate::State;
 use super::heuristics::{
-    hold_important_pieces, middle_piece_differential, middle_proximity,
-    number_of_pieces, piece_differential, win_lose_condition,
+    hold_important_pieces, middle_piece_differential, middle_proximity, piece_differential, win_lose_condition,
 };
 
 #[derive(Debug, Clone)]
@@ -68,7 +67,7 @@ impl GameTree {
             &self.tree,
             &[],
             &|_, _| "".to_owned(),
-            &|_, (ni, gamenode)| format!("label = \"{}\"", gamenode.evaluate()),
+            &|_, (_ni, gamenode)| format!("label = \"{}\"", gamenode.evaluate()),
         );
         // let dot = Dot::new(&self.tree);
         write!(file, "{:?}", dot).expect("failed to write to input file");
@@ -170,14 +169,14 @@ impl GameNode {
     }
 
     fn evaluate(&self) -> i8 {
-        return (win_lose_condition(&self.state, self.state.current_turn)
+        return win_lose_condition(&self.state, self.state.current_turn)
             .div(5)
             + middle_proximity(&self.state, self.state.current_turn).div(5)
             + middle_piece_differential(&self.state, self.state.current_turn)
                 .div(5)
             + piece_differential(&self.state, self.state.current_turn).div(5)
             + hold_important_pieces(&self.state, self.state.current_turn)
-                .div(5));
+                .div(5);
     }
 }
 

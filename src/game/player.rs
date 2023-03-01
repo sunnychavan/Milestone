@@ -6,10 +6,10 @@ use crate::game::board::Move;
 
 use crate::ai::tree::GameTree;
 
-use super::{gamestate::State, pieces::Piece};
+use super::{gamestate::State};
 use core::fmt::Debug;
 use separator::Separatable;
-use std::fs::File;
+
 use std::io;
 use std::time::Instant;
 

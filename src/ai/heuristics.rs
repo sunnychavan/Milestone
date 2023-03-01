@@ -1,11 +1,10 @@
 use std::{
     collections::{HashMap, HashSet},
-    ops::{Div, Mul},
+    ops::{Div},
 };
 
 use crate::game::{
     board::Hole, gamestate::State, pieces::Piece::Black, pieces::Piece::White,
-    player::Player,
 };
 
 pub fn number_of_pieces(state: &State) -> i8 {

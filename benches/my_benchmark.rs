@@ -3,19 +3,17 @@ use milestone::{
     self,
     ai::tree::{GameNode, GameTree},
     game::{
-        gamestate::State,
+        gamestate::{GameBuilder, State},
         pieces::Piece,
         player::{PossiblePlayer, AI},
     },
 };
 
 fn create_game_env() -> milestone::game::gamestate::State {
-    let players: [PossiblePlayer; 2] = [
-        PossiblePlayer::AI(AI::new("P1".to_string())),
-        PossiblePlayer::AI(AI::new("P2".to_string())),
-    ];
-
-    return State::new(&players);
+    GameBuilder::new()
+        .set_player_1(PossiblePlayer::AI(AI::new("P1".to_string())))
+        .set_player_2(PossiblePlayer::AI(AI::new("P2".to_string())))
+        .build()
 }
 
 fn build_tree(state: &mut State, depth: u8) -> GameTree {

@@ -1,12 +1,11 @@
-use crate::game::gamestate::GameBuilder;
-use crate::game::pieces::Piece;
-use crate::game::player::{Player, PossiblePlayer};
+use crate::game::gamestate::{GameBuilder, State};
 
-use super::game::gamestate::State;
+use crate::game::player::PossiblePlayer;
+
 use crate::game::player::{Person, AI};
 use std::io;
 
-pub fn choose_type_of_game() -> GameBuilder {
+pub fn choose_type_of_game() -> State {
     println!(
         "Enter:\n\t(1) to play a game as black vs the AI,\
                \n\t(2) to play a game as white vs the AI,\
@@ -22,55 +21,53 @@ pub fn choose_type_of_game() -> GameBuilder {
                 "1" => {
                     // game as black
                     let player_name = get_name_from_user("yourself");
+
                     gb.set_player_1(PossiblePlayer::Person(Person::new(
                         player_name,
-                    )));
-
-                    gb.set_player_2(PossiblePlayer::AI(AI::new(
-                        "AI".to_string(),
-                    )));
-                    return gb;
+                    )))
+                    .set_player_2(PossiblePlayer::AI(AI::new("AI".to_string())))
+                    .build()
                 }
                 "2" => {
                     // game as white
+                    let player_name = get_name_from_user("yourself");
+
                     gb.set_player_1(PossiblePlayer::AI(AI::new(
                         "AI".to_string(),
-                    )));
-
-                    let player_name = get_name_from_user("yourself");
-                    gb.set_player_2(PossiblePlayer::Person(Person::new(
+                    )))
+                    .set_player_2(PossiblePlayer::Person(Person::new(
                         player_name,
-                    )));
-                    return gb;
+                    )))
+                    .build()
                 }
                 "3" => {
                     // game between two humans
                     let player_1_name = get_name_from_user("player 1");
+                    let player_2_name = get_name_from_user("player 2");
+
                     gb.set_player_1(PossiblePlayer::Person(Person::new(
                         player_1_name,
-                    )));
-
-                    let player_2_name = get_name_from_user("player 2");
-                    gb.set_player_2(PossiblePlayer::Person(Person::new(
+                    )))
+                    .set_player_2(PossiblePlayer::Person(Person::new(
                         player_2_name,
-                    )));
-                    return gb;
+                    )))
+                    .build()
                 }
                 "0" => {
                     // game between two AI
                     gb.set_player_1(PossiblePlayer::AI(AI::new(
                         "AI 1".to_string(),
-                    )));
-                    gb.set_player_2(PossiblePlayer::AI(AI::new(
+                    )))
+                    .set_player_2(PossiblePlayer::AI(AI::new(
                         "AI 2".to_string(),
-                    )));
-                    return gb;
+                    )))
+                    .build()
                 }
                 _ => {
                     println!("Oops. That isn't a valid input, try again:");
                     return choose_type_of_game();
                 }
-            };
+            }
         }
         Err(e) => {
             println!("Oops. Something went wrong ({})", e);
@@ -80,7 +77,7 @@ pub fn choose_type_of_game() -> GameBuilder {
 }
 
 pub fn play_game() {
-    let mut game = choose_type_of_game().build();
+    let mut game = choose_type_of_game();
 
     println!("{:?}", game);
 
