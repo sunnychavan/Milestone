@@ -38,7 +38,7 @@ impl GameTree {
         let mut tree = DiGraph::<GameNode, Move>::new();
 
         GameTree {
-            tree_root_idx: tree.add_node(GameNode::new(0, base_state.clone())),
+            tree_root_idx: tree.add_node(GameNode::new(0, base_state)),
             tree,
             max_depth,
         }
@@ -64,7 +64,7 @@ impl GameTree {
             },
         );
         // let dot = Dot::new(&self.tree);
-        write!(file, "{:?}", dot).expect("failed to write to input file");
+        write!(file, "{dot:?}").expect("failed to write to input file");
     }
 
     pub fn build_eval_tree(&mut self) {
@@ -100,7 +100,7 @@ impl GameTree {
         // this node is a leaf node / at max-depth:
         if outgoing_moves.peek().is_none() {
             let root_node = self.tree.index(root_idx);
-            return (root_node.evaluate(), None);
+            (root_node.evaluate(), None)
         } else {
             // to maximize this node, minimize its children
             let best_move;
@@ -113,7 +113,7 @@ impl GameTree {
                 })
                 .max_by_key(|elt| elt.0)
                 .unwrap();
-            return (result, Some(&best_move));
+            (result, Some(best_move))
         }
     }
 
@@ -124,7 +124,7 @@ impl GameTree {
         // this node is a leaf node / at max-depth:
         if outgoing_moves.peek().is_none() {
             let root_node = self.tree.index(root_idx);
-            return (root_node.evaluate(), None);
+            (root_node.evaluate(), None)
         } else {
             // to minimize this node, maximize its children
             let best_move;
@@ -137,7 +137,7 @@ impl GameTree {
                 })
                 .min_by_key(|elt| elt.0)
                 .unwrap();
-            return (result, Some(&best_move));
+            (result, Some(best_move))
         }
     }
 
@@ -159,13 +159,12 @@ impl GameNode {
     }
 
     fn evaluate(&self) -> i8 {
-        return win_lose_condition(&self.state, self.state.current_turn).div(5)
+        win_lose_condition(&self.state, self.state.current_turn).div(5)
             + middle_proximity(&self.state, self.state.current_turn).div(5)
             + middle_piece_differential(&self.state, self.state.current_turn)
                 .div(5)
             + piece_differential(&self.state, self.state.current_turn).div(5)
-            + hold_important_pieces(&self.state, self.state.current_turn)
-                .div(5);
+            + hold_important_pieces(&self.state, self.state.current_turn).div(5)
     }
 }
 

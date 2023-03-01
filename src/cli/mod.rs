@@ -65,12 +65,12 @@ pub fn choose_type_of_game() -> State {
                 }
                 _ => {
                     println!("Oops. That isn't a valid input, try again:");
-                    return choose_type_of_game();
+                    choose_type_of_game()
                 }
             }
         }
         Err(e) => {
-            println!("Oops. Something went wrong ({})", e);
+            println!("Oops. Something went wrong ({e})");
             choose_type_of_game()
         }
     }
@@ -79,7 +79,7 @@ pub fn choose_type_of_game() -> State {
 pub fn play_game() {
     let mut game = choose_type_of_game();
 
-    println!("{:?}", game);
+    println!("{game:?}");
 
     while game.active {
         game.play_one_turn();
@@ -109,13 +109,13 @@ pub fn play_game() {
 }
 
 pub fn get_name_from_user(label: &str) -> String {
-    println!("Please input a name for {}:", label);
+    println!("Please input a name for {label}:");
 
     let mut input = String::new();
     match io::stdin().read_line(&mut input) {
         Ok(_) => input.trim().to_string(),
         Err(e) => {
-            println!("Oops. Something went wrong ({}), please try again", e);
+            println!("Oops. Something went wrong ({e}), please try again");
             get_name_from_user(label)
         }
     }

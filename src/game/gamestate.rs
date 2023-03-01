@@ -5,6 +5,7 @@ use super::{
 };
 use std::fmt::{self};
 
+#[derive(Default)]
 pub struct GameBuilder {
     board: Board,
     players: [PossiblePlayer; 2],
@@ -33,7 +34,7 @@ impl GameBuilder {
             active: true,
             current_turn: 0,
             board: self.board.to_owned(),
-            players: self.players.to_owned(),
+            players: self.players,
         }
     }
 }
@@ -58,7 +59,7 @@ impl fmt::Debug for State {
             &format!(
                 "{} {:?}",
                 current_player.name(),
-                self.get_pieces_type_from_player(&current_player)
+                self.get_pieces_type_from_player(current_player)
             ),
         );
 
@@ -79,7 +80,7 @@ impl fmt::Display for State {
             &format!(
                 "{} {:?}",
                 current_player.name(),
-                self.get_pieces_type_from_player(&current_player)
+                self.get_pieces_type_from_player(current_player)
             ),
         );
 
@@ -180,10 +181,7 @@ impl State {
             .into_iter()
             .filter(|&m| {
                 let (Diagonal(origin, dest) | Straight(origin, dest)) = m;
-                match self.can_move(origin, dest) {
-                    Ok(_) => true,
-                    _ => false,
-                }
+                matches!(self.can_move(origin, dest), Ok(_))
             })
             .collect::<Vec<Move>>()
     }

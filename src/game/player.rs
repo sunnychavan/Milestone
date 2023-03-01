@@ -6,7 +6,7 @@ use crate::game::board::Move;
 
 use crate::ai::tree::GameTree;
 
-use super::{gamestate::State};
+use super::gamestate::State;
 use core::fmt::Debug;
 use separator::Separatable;
 
@@ -35,26 +35,25 @@ impl Player for Person {
         let mut input = String::new();
         match io::stdin().read_line(&mut input) {
             Ok(_) => {
-                match handle_move_input(state, &input.trim()) {
+                match handle_move_input(state, input.trim()) {
                     Ok(_) => (),
                     Err(e) => {
                         println!(
-                            "Couldn't process that move ({}). Please try again",
-                            e
+                            "Couldn't process that move ({e}). Please try again"
                         );
                         self.one_turn(state);
                     }
                 };
             }
-            Err(e) => println!("Oops. Something went wrong ({})", e),
+            Err(e) => println!("Oops. Something went wrong ({e})"),
         }
 
-        println!("{}", state);
+        println!("{state}");
     }
 }
 
-fn handle_move_input<'a>(
-    game: &'a mut State,
+fn handle_move_input(
+    game: &mut State,
     input: &str,
 ) -> Result<(), &'static str> {
     match input.split('-').collect::<Vec<&str>>()[..] {
@@ -125,7 +124,7 @@ impl Player for AI {
             piece_differential(state, 1-state.current_turn),
             hold_important_pieces(state, 1-state.current_turn)
         );
-        println!("{}", state);
+        println!("{state}");
     }
 }
 

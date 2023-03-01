@@ -9,6 +9,7 @@ pub struct Board {
 }
 
 impl fmt::Display for Board {
+    #[allow(clippy::repeat_once)]
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let space = "  ";
 
@@ -18,7 +19,7 @@ impl fmt::Display for Board {
         repr.push_str(&space.repeat(3));
         repr.push_str(&format!("{:?}", self.board[0]));
         repr.push_str(&space.repeat(3));
-        repr.push_str(&"\n");
+        repr.push('\n');
 
         // second line
         repr.push_str(&space.repeat(2));
@@ -26,7 +27,7 @@ impl fmt::Display for Board {
         repr.push_str(&space.repeat(1));
         repr.push_str(&format!("{:?}", self.board[2]));
         repr.push_str(&space.repeat(2));
-        repr.push_str(&"\n");
+        repr.push('\n');
 
         // third line
         repr.push_str(&space.repeat(1));
@@ -36,7 +37,7 @@ impl fmt::Display for Board {
         repr.push_str(&space.repeat(1));
         repr.push_str(&format!("{:?}", self.board[5]));
         repr.push_str(&space.repeat(1));
-        repr.push_str(&"\n");
+        repr.push('\n');
 
         // fourth line
         repr.push_str(&format!("{:?}", self.board[6]));
@@ -46,7 +47,7 @@ impl fmt::Display for Board {
         repr.push_str(&format!("{:?}", self.board[8]));
         repr.push_str(&space.repeat(1));
         repr.push_str(&format!("{:?}", self.board[9]));
-        repr.push_str(&"\n");
+        repr.push('\n');
 
         // fifth line
         repr.push_str(&space.repeat(1));
@@ -56,7 +57,7 @@ impl fmt::Display for Board {
         repr.push_str(&space.repeat(1));
         repr.push_str(&format!("{:?}", self.board[12]));
         repr.push_str(&space.repeat(1));
-        repr.push_str(&"\n");
+        repr.push('\n');
 
         // sixth line
         repr.push_str(&format!("{:?}", self.board[13]));
@@ -66,7 +67,7 @@ impl fmt::Display for Board {
         repr.push_str(&format!("{:?}", self.board[15]));
         repr.push_str(&space.repeat(1));
         repr.push_str(&format!("{:?}", self.board[16]));
-        repr.push_str(&"\n");
+        repr.push('\n');
 
         // seventh line
         repr.push_str(&space.repeat(1));
@@ -76,7 +77,7 @@ impl fmt::Display for Board {
         repr.push_str(&space.repeat(1));
         repr.push_str(&format!("{:?}", self.board[19]));
         repr.push_str(&space.repeat(1));
-        repr.push_str(&"\n");
+        repr.push('\n');
 
         // eigth line
         repr.push_str(&format!("{:?}", self.board[20]));
@@ -86,7 +87,7 @@ impl fmt::Display for Board {
         repr.push_str(&format!("{:?}", self.board[22]));
         repr.push_str(&space.repeat(1));
         repr.push_str(&format!("{:?}", self.board[23]));
-        repr.push_str(&"\n");
+        repr.push('\n');
 
         // ninth line
         repr.push_str(&space.repeat(1));
@@ -96,7 +97,7 @@ impl fmt::Display for Board {
         repr.push_str(&space.repeat(1));
         repr.push_str(&format!("{:?}", self.board[26]));
         repr.push_str(&space.repeat(1));
-        repr.push_str(&"\n");
+        repr.push('\n');
 
         // tenth line
         repr.push_str(&format!("{:?}", self.board[27]));
@@ -106,7 +107,7 @@ impl fmt::Display for Board {
         repr.push_str(&format!("{:?}", self.board[29]));
         repr.push_str(&space.repeat(1));
         repr.push_str(&format!("{:?}", self.board[30]));
-        repr.push_str(&"\n");
+        repr.push('\n');
 
         // eleventh line
         repr.push_str(&space.repeat(1));
@@ -116,7 +117,7 @@ impl fmt::Display for Board {
         repr.push_str(&space.repeat(1));
         repr.push_str(&format!("{:?}", self.board[33]));
         repr.push_str(&space.repeat(1));
-        repr.push_str(&"\n");
+        repr.push('\n');
 
         // twelfth line
         repr.push_str(&space.repeat(2));
@@ -124,21 +125,22 @@ impl fmt::Display for Board {
         repr.push_str(&space.repeat(1));
         repr.push_str(&format!("{:?}", self.board[35]));
         repr.push_str(&space.repeat(2));
-        repr.push_str(&"\n");
+        repr.push('\n');
 
         // thirteenth line
         repr.push_str(&space.repeat(3));
         repr.push_str(&format!("{:?}", self.board[36]));
         repr.push_str(&space.repeat(3));
-        repr.push_str(&"\n");
+        repr.push('\n');
 
-        repr.push_str("}");
+        repr.push('}');
 
-        write!(f, "{}", repr)
+        write!(f, "{repr}")
     }
 }
 
 impl fmt::Debug for Board {
+    #[allow(clippy::repeat_once)]
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let space = "    ";
 
@@ -148,7 +150,7 @@ impl fmt::Debug for Board {
         repr.push_str(&space.repeat(3));
         repr.push_str(&format!(" 0:{:?}", self.board[0]));
         repr.push_str(&space.repeat(3));
-        repr.push_str(&"\n");
+        repr.push('\n');
 
         // second line
         repr.push_str(&space.repeat(2));
@@ -156,7 +158,7 @@ impl fmt::Debug for Board {
         repr.push_str(&space.repeat(1));
         repr.push_str(&format!(" 2:{:?}", self.board[2]));
         repr.push_str(&space.repeat(2));
-        repr.push_str(&"\n");
+        repr.push('\n');
 
         // third line
         repr.push_str(&space.repeat(1));
@@ -166,7 +168,7 @@ impl fmt::Debug for Board {
         repr.push_str(&space.repeat(1));
         repr.push_str(&format!(" 5:{:?}", self.board[5]));
         repr.push_str(&space.repeat(1));
-        repr.push_str(&"\n");
+        repr.push('\n');
 
         // fourth line
         repr.push_str(&format!(" 6:{:?}", self.board[6]));
@@ -176,7 +178,7 @@ impl fmt::Debug for Board {
         repr.push_str(&format!(" 8:{:?}", self.board[8]));
         repr.push_str(&space.repeat(1));
         repr.push_str(&format!(" 9:{:?}", self.board[9]));
-        repr.push_str(&"\n");
+        repr.push('\n');
 
         // fifth line
         repr.push_str(&space.repeat(1));
@@ -186,7 +188,7 @@ impl fmt::Debug for Board {
         repr.push_str(&space.repeat(1));
         repr.push_str(&format!("12:{:?}", self.board[12]));
         repr.push_str(&space.repeat(1));
-        repr.push_str(&"\n");
+        repr.push('\n');
 
         // sixth line
         repr.push_str(&format!("13:{:?}", self.board[13]));
@@ -196,7 +198,7 @@ impl fmt::Debug for Board {
         repr.push_str(&format!("15:{:?}", self.board[15]));
         repr.push_str(&space.repeat(1));
         repr.push_str(&format!("16:{:?}", self.board[16]));
-        repr.push_str(&"\n");
+        repr.push('\n');
 
         // seventh line
         repr.push_str(&space.repeat(1));
@@ -206,7 +208,7 @@ impl fmt::Debug for Board {
         repr.push_str(&space.repeat(1));
         repr.push_str(&format!("19:{:?}", self.board[19]));
         repr.push_str(&space.repeat(1));
-        repr.push_str(&"\n");
+        repr.push('\n');
 
         // eigth line
         repr.push_str(&format!("20:{:?}", self.board[20]));
@@ -216,7 +218,7 @@ impl fmt::Debug for Board {
         repr.push_str(&format!("22:{:?}", self.board[22]));
         repr.push_str(&space.repeat(1));
         repr.push_str(&format!("23:{:?}", self.board[23]));
-        repr.push_str(&"\n");
+        repr.push('\n');
 
         // ninth line
         repr.push_str(&space.repeat(1));
@@ -226,7 +228,7 @@ impl fmt::Debug for Board {
         repr.push_str(&space.repeat(1));
         repr.push_str(&format!("26:{:?}", self.board[26]));
         repr.push_str(&space.repeat(1));
-        repr.push_str(&"\n");
+        repr.push('\n');
 
         // tenth line
         repr.push_str(&format!("27:{:?}", self.board[27]));
@@ -236,7 +238,7 @@ impl fmt::Debug for Board {
         repr.push_str(&format!("29:{:?}", self.board[29]));
         repr.push_str(&space.repeat(1));
         repr.push_str(&format!("30:{:?}", self.board[30]));
-        repr.push_str(&"\n");
+        repr.push('\n');
 
         // eleventh line
         repr.push_str(&space.repeat(1));
@@ -246,7 +248,7 @@ impl fmt::Debug for Board {
         repr.push_str(&space.repeat(1));
         repr.push_str(&format!("33:{:?}", self.board[33]));
         repr.push_str(&space.repeat(1));
-        repr.push_str(&"\n");
+        repr.push('\n');
 
         // twelfth line
         repr.push_str(&space.repeat(2));
@@ -254,17 +256,17 @@ impl fmt::Debug for Board {
         repr.push_str(&space.repeat(1));
         repr.push_str(&format!("35:{:?}", self.board[35]));
         repr.push_str(&space.repeat(2));
-        repr.push_str(&"\n");
+        repr.push('\n');
 
         // thirteenth line
         repr.push_str(&space.repeat(3));
         repr.push_str(&format!("36:{:?}", self.board[36]));
         repr.push_str(&space.repeat(3));
-        repr.push_str(&"\n");
+        repr.push('\n');
 
-        repr.push_str("}");
+        repr.push('}');
 
-        write!(f, "{}", repr)
+        write!(f, "{repr}")
     }
 }
 
@@ -372,9 +374,16 @@ lazy_static! {
     ];
 }
 
+impl Default for Board {
+    fn default() -> Self {
+        Board::new()
+    }
+}
+
 impl Board {
     pub fn new() -> Board {
         let mut pieces = [Hole(None); 37];
+        #[allow(clippy::needless_range_loop)]
         for i in 0..=36 {
             pieces[i] = match i {
                 i if i < 10 => Hole(Some(Piece::Black)),
@@ -451,9 +460,7 @@ impl Board {
             .flat_map(|elt| {
                 let move_dests = lookup.get(elt.to_owned());
                 match move_dests {
-                    Some(moves) => {
-                        moves.to_owned().into_iter().collect::<Vec<Move>>()
-                    }
+                    Some(moves) => moves.to_vec(),
                     None => vec![],
                 }
             })

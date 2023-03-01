@@ -13,6 +13,6 @@ impl fmt::Debug for Piece {
             Piece::Black => "⚫",
         };
 
-        write!(f, "{}", val)
+        write!(f, "{val}")
     }
 }
