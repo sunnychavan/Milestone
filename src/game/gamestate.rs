@@ -5,6 +5,39 @@ use super::{
 };
 use std::fmt::{self};
 
+pub struct GameBuilder {
+    board: Board,
+    players: [PossiblePlayer; 2],
+}
+
+impl GameBuilder {
+    pub fn new() -> GameBuilder {
+        GameBuilder {
+            board: Board::new(),
+            players: [PossiblePlayer::default(), PossiblePlayer::default()],
+        }
+    }
+
+    pub fn set_player_1(&mut self, p: PossiblePlayer) -> &mut GameBuilder {
+        self.players[0] = p;
+        self
+    }
+
+    pub fn set_player_2(&mut self, p: PossiblePlayer) -> &mut GameBuilder {
+        self.players[1] = p;
+        self
+    }
+
+    pub fn build(self) -> State {
+        State {
+            active: true,
+            current_turn: 0,
+            board: self.board.to_owned(),
+            players: self.players.to_owned(),
+        }
+    }
+}
+
 #[derive(Clone)]
 pub struct State {
     pub active: bool,
@@ -57,15 +90,6 @@ impl fmt::Display for State {
 }
 
 impl State {
-    pub fn new(players: &[PossiblePlayer; 2]) -> State {
-        State {
-            active: true,
-            current_turn: 0,
-            board: Board::new(),
-            players: players.clone(),
-        }
-    }
-
     // can_move() returns <T, _> if this players move would require a capture,
     //   <F, _> if it is a valid move without a capture,
     //   and <_, E(str)> if it is an invalid move
@@ -180,5 +204,12 @@ impl State {
             1 => Piece::White,
             _ => panic!("games only have two players"),
         }
+    }
+
+    pub fn play_one_turn(&mut self) {
+        let current_player =
+            self.players[self.current_turn as usize].to_owned();
+
+        current_player.one_turn(self);
     }
 }
