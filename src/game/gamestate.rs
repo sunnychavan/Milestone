@@ -3,7 +3,7 @@ use super::{
     board::Move::Straight, pieces::Piece, player::Player,
     player::PossiblePlayer,
 };
-use std::fmt;
+use std::fmt::{self};
 
 #[derive(Clone)]
 pub struct State {
@@ -15,44 +15,44 @@ pub struct State {
 
 impl fmt::Debug for State {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        let mut repr = "Milestone: {\n".to_owned();
+        let mut fmt_struct = f.debug_struct("Milestone");
 
-        repr.push_str(&format!("active: {:?}\n", self.active));
+        fmt_struct.field("active", &self.active);
 
         let current_player = &self.players[usize::from(self.current_turn)];
-        repr.push_str(&format!(
-            "current_turn: {} {:?}\n",
-            current_player.name(),
-            current_player.get_pieces_type()
-        ));
+        fmt_struct.field(
+            "current_turn",
+            &format!(
+                "{} {:?}",
+                current_player.name(),
+                self.get_pieces_type_from_player(&current_player)
+            ),
+        );
 
-        repr.push_str(&format!("board: {:?}\n", self.board));
+        fmt_struct.field("board", &self.board);
+        fmt_struct.field("players", &self.players);
 
-        repr.push_str(&format!("players: [\n"));
-        repr.push_str(&format!("  {:?},\n", self.players[0]));
-        repr.push_str(&format!("  {:?}\n", self.players[1]));
-        repr.push_str(&format!("]"));
-        repr.push_str(&"}");
-
-        write!(f, "{}", repr)
+        fmt_struct.finish()
     }
 }
 
 impl fmt::Display for State {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        let mut repr = "Milestone:\n".to_owned();
+        let mut fmt_struct = f.debug_struct("Milestone");
 
-        let current_player: &dyn Player =
-            &self.players[usize::from(self.current_turn)];
-        repr.push_str(&format!(
-            "  current_turn: {} {:?}\n",
-            current_player.name(),
-            current_player.get_pieces_type()
-        ));
+        let current_player = &self.players[usize::from(self.current_turn)];
+        fmt_struct.field(
+            "current_turn",
+            &format!(
+                "{} {:?}",
+                current_player.name(),
+                self.get_pieces_type_from_player(&current_player)
+            ),
+        );
 
-        repr.push_str(&format!("  board: {}", self.board));
+        fmt_struct.field("board", &self.board);
 
-        write!(f, "{}", repr)
+        fmt_struct.finish()
     }
 }
 
@@ -75,7 +75,7 @@ impl State {
         to: usize,
     ) -> Result<bool, &'static str> {
         let current_player_pieces =
-            self.players[usize::from(self.current_turn)].get_pieces_type();
+            self.get_pieces_type_from_idx(self.current_turn);
 
         let valid_start: bool = self
             .board
@@ -113,7 +113,7 @@ impl State {
         capture: bool,
     ) -> Result<(), &'static str> {
         let current_player_pieces =
-            self.players[usize::from(self.current_turn)].get_pieces_type();
+            self.get_pieces_type_from_idx(self.current_turn);
 
         match (self.can_move(from, to), capture) {
             (Ok(true), true) => {
@@ -162,5 +162,23 @@ impl State {
                 }
             })
             .collect::<Vec<Move>>()
+    }
+
+    pub fn get_pieces_type_from_player(&self, p: &PossiblePlayer) -> Piece {
+        // operating on the assumption that players are placed in order (black first)
+        let idx = self
+            .players
+            .iter()
+            .position(|plr| plr == p)
+            .expect("this player is not in the game");
+        self.get_pieces_type_from_idx(idx.try_into().unwrap())
+    }
+
+    pub fn get_pieces_type_from_idx(&self, idx: u8) -> Piece {
+        match idx {
+            0 => Piece::Black,
+            1 => Piece::White,
+            _ => panic!("games only have two players"),
+        }
     }
 }

@@ -11,12 +11,12 @@ pub fn two_player_game() {
 
     let players: [PossiblePlayer; 2] = match player_pieces {
         Piece::Black => [
-            PossiblePlayer::Person(Person::new(player_name, Piece::Black)),
-            PossiblePlayer::AI(AI::new("AI".to_string(), Piece::White)),
+            PossiblePlayer::Person(Person::new(player_name)),
+            PossiblePlayer::AI(AI::new("AI".to_string())),
         ],
         Piece::White => [
-            PossiblePlayer::AI(AI::new("AI".to_string(), Piece::Black)),
-            PossiblePlayer::Person(Person::new(player_name, Piece::White)),
+            PossiblePlayer::AI(AI::new("AI".to_string())),
+            PossiblePlayer::Person(Person::new(player_name)),
         ],
     };
 
@@ -26,6 +26,28 @@ pub fn two_player_game() {
 
     while game.active {
         players[game.current_turn as usize].one_turn(&mut game);
+        println!(
+            "Press (u) to undo the last move, \
+             (pX) to create an SVG of the recent game tree with depth X, \
+             and anything else to continue:"
+        );
+        let mut input = String::new();
+        match io::stdin().read_line(&mut input) {
+            Ok(_) => match input.as_str().trim() {
+                "u" => {
+                    // undo the previous move
+                }
+                "p" => {
+                    // print the recent game tree
+                }
+                _ => {
+                    // continue
+                }
+            },
+            Err(e) => {
+                println!("Oops. Something went wrong ({})", e);
+            }
+        }
     }
 }
 

@@ -11,8 +11,8 @@ use milestone::{
 
 fn create_game_env() -> milestone::game::gamestate::State {
     let players: [PossiblePlayer; 2] = [
-        PossiblePlayer::AI(AI::new("P1".to_string(), Piece::Black)),
-        PossiblePlayer::AI(AI::new("P2".to_string(), Piece::White)),
+        PossiblePlayer::AI(AI::new("P1".to_string())),
+        PossiblePlayer::AI(AI::new("P2".to_string())),
     ];
 
     return State::new(&players);
@@ -36,7 +36,7 @@ fn evaluate_tree_benchmark(c: &mut Criterion) {
     let tree = build_tree(&mut state, 2);
 
     c.bench_function("evaluate tree (depth: 2)", |b| {
-        b.iter(|| black_box(tree.clone()).minimax())
+        b.iter(|| black_box(tree.clone()).rollback())
     });
 }
 

@@ -19,7 +19,7 @@ pub fn number_of_pieces(state: &State) -> i8 {
     unsigned100_normalize(0, 10, raw_score)
 }
 
-pub fn piece_differential(state: &State, turn:u8) -> i8 {
+pub fn piece_differential(state: &State, turn: u8) -> i8 {
     let current_player_num = state
         .board
         .current_players_pieces(turn)
@@ -36,23 +36,22 @@ pub fn piece_differential(state: &State, turn:u8) -> i8 {
     unsigned100_normalize(-10, 10, current_player_num - opponent_num)
 }
 
-pub fn hold_important_pieces(state: &State, turn:u8) -> i8 {
+pub fn hold_important_pieces(state: &State, turn: u8) -> i8 {
     let mut important_pieces: HashMap<usize, i64> = HashMap::new();
-    let current_player = &state.players[turn as usize];
 
-    match current_player.get_pieces_type() {
+    match state.get_pieces_type_from_idx(turn) {
         Black => {
             important_pieces.insert(0, 3);
             important_pieces.insert(1, 1);
             important_pieces.insert(2, 1);
-        },
+        }
         White => {
             important_pieces.insert(36, 3);
             important_pieces.insert(34, 1);
             important_pieces.insert(35, 1);
         }
-        }
-        let raw_val = state
+    }
+    let raw_val = state
         .board
         .current_players_pieces(turn)
         .iter()
@@ -60,9 +59,9 @@ pub fn hold_important_pieces(state: &State, turn:u8) -> i8 {
         .sum();
 
     unsigned100_normalize(0, 5, raw_val)
-    }
-    
-pub fn middle_proximity(state: &State, turn:u8) -> i8 {
+}
+
+pub fn middle_proximity(state: &State, turn: u8) -> i8 {
     let mut middle_proximity: HashMap<usize, i64> = HashMap::new();
     middle_proximity.insert(0, 6);
     middle_proximity.insert(4, 6);
@@ -112,10 +111,14 @@ pub fn middle_proximity(state: &State, turn:u8) -> i8 {
         .map(|&elt| middle_proximity.get(&elt).unwrap_or(&0))
         .sum();
 
-    unsigned100_normalize(lowerbound_middle_proximity(), upperbound_middle_proximity(6, 3), raw_val)
+    unsigned100_normalize(
+        lowerbound_middle_proximity(),
+        upperbound_middle_proximity(6, 3),
+        raw_val,
+    )
 }
 
-pub fn middle_piece_differential(state: &State, turn:u8) -> i8 {
+pub fn middle_piece_differential(state: &State, turn: u8) -> i8 {
     let mut middle_pieces = HashSet::new();
     middle_pieces.insert(0);
     middle_pieces.insert(4);
@@ -126,40 +129,26 @@ pub fn middle_piece_differential(state: &State, turn:u8) -> i8 {
     middle_pieces.insert(36);
 
     let current_player_num: i64 = state
-    .board
-    .current_players_pieces(turn)
-    .iter()
-    .map(|&elt| {
-        if middle_pieces.contains(&elt){
-            1
-        }
-        else{
-            0
-        }
-    } ).sum();
+        .board
+        .current_players_pieces(turn)
+        .iter()
+        .map(|&elt| if middle_pieces.contains(&elt) { 1 } else { 0 })
+        .sum();
 
     let opponent_player_num: i64 = state
-    .board
-    .current_players_pieces(1 - turn)
-    .iter()
-    .map(|&elt| {
-        if middle_pieces.contains(&elt){
-            1
-        }
-        else{
-            0
-        }
-    } ).sum();
+        .board
+        .current_players_pieces(1 - turn)
+        .iter()
+        .map(|&elt| if middle_pieces.contains(&elt) { 1 } else { 0 })
+        .sum();
     unsigned100_normalize(-7, 7, current_player_num - opponent_player_num)
 }
 
-pub fn win_lose_condition(state: &State, turn:u8) -> i8 {
-    let current_player = &state.players[turn as usize];
-
+pub fn win_lose_condition(state: &State, turn: u8) -> i8 {
     // don't need to normalize
     let blacks_home = state.board.board[0];
     let whites_home = state.board.board[36];
-    match current_player.get_pieces_type() {
+    match state.get_pieces_type_from_idx(turn) {
         Black => match (blacks_home, whites_home) {
             (Hole(Some(White)), _) => -100,
             (_, Hole(Some(Black))) => 100,
@@ -182,13 +171,15 @@ fn unsigned100_normalize(min: i64, max: i64, value: i64) -> i8 {
         .expect("downcasting to a i8 failed")
 }
 
-
 // HEURISTIC HELPER FUNCTIONS ( E.G. LOWERBOUND UPPERBOUND CALCULATORS ) //
 
 pub fn lowerbound_middle_proximity() -> i64 {
     0
 }
 
-pub fn upperbound_middle_proximity(middle_weight: i64, next_middle_weight: i64 ) -> i64 {
-    7*middle_weight + 3*next_middle_weight
+pub fn upperbound_middle_proximity(
+    middle_weight: i64,
+    next_middle_weight: i64,
+) -> i64 {
+    7 * middle_weight + 3 * next_middle_weight
 }

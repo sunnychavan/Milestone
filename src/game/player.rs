@@ -13,25 +13,20 @@ use std::fs::File;
 use std::io;
 use std::time::Instant;
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Default, PartialEq)]
 pub struct Person {
     name: String,
-    pieces: Piece,
 }
 
 impl Person {
-    pub fn new(name: String, pieces: Piece) -> Person {
-        Person { name, pieces }
+    pub fn new(name: String) -> Person {
+        Person { name }
     }
 }
 
 impl Player for Person {
     fn name(&self) -> String {
         self.name.clone()
-    }
-
-    fn get_pieces_type(&self) -> Piece {
-        self.pieces
     }
 
     fn one_turn(&self, state: &mut State) {
@@ -54,7 +49,7 @@ impl Player for Person {
             Err(e) => println!("Oops. Something went wrong ({})", e),
         }
 
-        println!("{:?}", state);
+        println!("{}", state);
     }
 }
 
@@ -75,15 +70,14 @@ fn handle_move_input<'a>(
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Default, PartialEq)]
 pub struct AI {
     name: String,
-    pieces: Piece,
 }
 
 impl AI {
-    pub fn new(name: String, pieces: Piece) -> AI {
-        AI { name, pieces }
+    pub fn new(name: String) -> AI {
+        AI { name }
     }
 }
 
@@ -92,9 +86,6 @@ impl Player for AI {
         self.name.clone()
     }
 
-    fn get_pieces_type(&self) -> Piece {
-        self.pieces
-    }
     fn one_turn(&self, state: &mut State) {
         let depth = 5;
         println!("AI thinking...");
@@ -134,26 +125,26 @@ impl Player for AI {
             piece_differential(state, 1-state.current_turn),
             hold_important_pieces(state, 1-state.current_turn)
         );
-        println!("{:?}", state);
+        println!("{}", state);
     }
 }
 
 pub trait Player {
-    // fn new(name: String, pieces: Piece) -> Self
-    // where
-    //     Self: Sized;
-
     fn one_turn(&self, state: &mut State);
 
     fn name(&self) -> String;
-
-    fn get_pieces_type(&self) -> Piece;
 }
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq)]
 pub enum PossiblePlayer {
     Person(Person),
     AI(AI),
+}
+
+impl Default for PossiblePlayer {
+    fn default() -> Self {
+        PossiblePlayer::Person(Person::default())
+    }
 }
 
 impl Player for PossiblePlayer {
@@ -161,13 +152,6 @@ impl Player for PossiblePlayer {
         match self {
             PossiblePlayer::Person(p) => p.name(),
             PossiblePlayer::AI(a) => a.name(),
-        }
-    }
-
-    fn get_pieces_type(&self) -> Piece {
-        match self {
-            PossiblePlayer::Person(p) => p.get_pieces_type(),
-            PossiblePlayer::AI(a) => a.get_pieces_type(),
         }
     }
 
