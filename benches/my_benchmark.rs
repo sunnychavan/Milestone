@@ -1,7 +1,7 @@
 use criterion::{black_box, criterion_group, criterion_main, Criterion};
 use milestone::{
     self,
-    ai::tree::{GameTree},
+    ai::tree::GameTree,
     game::{
         gamestate::{GameBuilder, State},
         player::{PossiblePlayer, AI},
@@ -33,7 +33,7 @@ fn evaluate_tree_benchmark(c: &mut Criterion) {
     let tree = build_tree(&mut state, 2);
 
     c.bench_function("evaluate tree (depth: 2)", |b| {
-        b.iter(|| black_box(tree.clone()).rollback())
+        b.iter(|| black_box(tree.clone()).rollback(state.current_turn as usize))
     });
 }
 
