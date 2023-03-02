@@ -1,42 +1,34 @@
-use petgraph::dot::{Config, Dot};
+use petgraph::dot::Dot;
 use petgraph::graph::DiGraph;
 use petgraph::graph::NodeIndex;
-use petgraph::visit::{Dfs, EdgeRef};
-use petgraph::Graph;
+use petgraph::visit::EdgeRef;
 
 use std::fs::File;
-use std::io::{BufWriter, Write};
+use std::io::Write;
 use std::process::Command;
 use std::process::Stdio;
 
 use std::iter::Iterator;
-use std::ops::{Div, Index, IndexMut};
-use std::{fmt, num, thread};
+use std::ops::Index;
 
 use crate::game::board::Move;
 
 use super::super::game::board::Move::{Diagonal, Straight};
 use super::super::game::gamestate::State;
-use super::heuristics::{
-    hold_important_pieces, middle_piece_differential, middle_proximity,
-    number_of_pieces, piece_differential, win_lose_condition,
-};
+use super::heuristics::HeuristicWeights;
 
 #[derive(Debug, Clone)]
 pub struct GameTree {
     tree: DiGraph<GameNode, Move>,
     tree_root_idx: NodeIndex,
-    base_state: State,
     max_depth: u8,
-    best_move: Option<Move>,
-    evaluation: Option<i8>,
+    pub weights: HeuristicWeights,
 }
 
 #[derive(Debug, Clone)]
 pub struct GameNode {
     state: State,
     depth: u8,
-    evaluation: Option<i8>,
 }
 
 impl GameTree {
@@ -44,12 +36,10 @@ impl GameTree {
         let mut tree = DiGraph::<GameNode, Move>::new();
 
         GameTree {
-            tree_root_idx: tree.add_node(GameNode::new(0, base_state.clone())),
+            tree_root_idx: tree.add_node(GameNode::new(0, base_state)),
             tree,
-            base_state: base_state,
             max_depth,
-            best_move: None,
-            evaluation: None,
+            weights: HeuristicWeights::new([1, 1, 1, 1, 1]),
         }
     }
 
@@ -68,10 +58,15 @@ impl GameTree {
             &self.tree,
             &[],
             &|_, _| "".to_owned(),
-            &|_, (ni, gamenode)| format!("label = \"{}\"", gamenode.evaluate()),
+            &|_, _| "".to_owned(),
+            // &|_t, (_ni, gn)| {
+            //     format!(
+            //         "label = \"Heuristic: {:?}\"",
+            //         HeuristicWeights::new_with_state(&self.weights, &gn.state,)
+            //     )
+            // },
         );
-        // let dot = Dot::new(&self.tree);
-        write!(file, "{:?}", dot).expect("failed to write to input file");
+        write!(file, "{dot:?}").expect("failed to write to input file");
     }
 
     pub fn build_eval_tree(&mut self) {
@@ -100,59 +95,96 @@ impl GameTree {
         }
     }
 
-    fn max_value(&self, root_idx: NodeIndex) -> (i8, Option<&Move>) {
-        let result;
-
+    fn max_value(
+        &self,
+        root_idx: NodeIndex,
+        mut alpha: i64,
+        beta: i64,
+    ) -> (i64, Option<&Move>) {
         let mut outgoing_moves = self.tree.edges(root_idx).peekable();
         // this node is a leaf node / at max-depth:
         if outgoing_moves.peek().is_none() {
             let root_node = self.tree.index(root_idx);
-            return (root_node.evaluate(), None);
+            (root_node.evaluate(self), None)
         } else {
             // to maximize this node, minimize its children
-            let best_move;
-            (result, best_move) = self
-                .tree
-                .edges(root_idx)
-                .map(|edge| {
-                    let d = edge.target();
-                    (self.min_value(d).0, edge.weight())
-                })
-                .max_by_key(|elt| elt.0)
-                .unwrap();
-            return (result, Some(&best_move));
+            let mut best_score: i64 = i64::MIN;
+            let mut best_move: Option<&Move> = None;
+
+            for edge in outgoing_moves {
+                let d = edge.target();
+                let new_score = self.min_value(d, alpha, beta).0;
+                let new_move = Some(edge.weight());
+
+                if new_score > best_score {
+                    best_score = new_score;
+                    best_move = new_move;
+                }
+
+                // alpha / beta
+                alpha = std::cmp::max(best_score, alpha);
+                if alpha >= beta {
+                    break;
+                }
+            }
+
+            (best_score, best_move)
         }
     }
 
-    fn min_value(&self, root_idx: NodeIndex) -> (i8, Option<&Move>) {
-        let result;
-
+    fn min_value(
+        &self,
+        root_idx: NodeIndex,
+        alpha: i64,
+        mut beta: i64,
+    ) -> (i64, Option<&Move>) {
         let mut outgoing_moves = self.tree.edges(root_idx).peekable();
         // this node is a leaf node / at max-depth:
         if outgoing_moves.peek().is_none() {
             let root_node = self.tree.index(root_idx);
-            return (root_node.evaluate(), None);
+            (root_node.evaluate(self), None)
         } else {
             // to minimize this node, maximize its children
-            let best_move;
-            (result, best_move) = self
-                .tree
-                .edges(root_idx)
-                .map(|edge| {
-                    let d = edge.target();
-                    (self.max_value(d).0, edge.weight())
-                })
-                .min_by_key(|elt| elt.0)
-                .unwrap();
-            return (result, Some(&best_move));
+            let mut best_score: i64 = i64::MAX;
+            let mut best_move: Option<&Move> = None;
+
+            for edge in outgoing_moves {
+                let d = edge.target();
+                let new_score = self.max_value(d, alpha, beta).0;
+                let new_move = Some(edge.weight());
+
+                if new_score < best_score {
+                    best_score = new_score;
+                    best_move = new_move;
+                }
+
+                // alpha / beta
+                beta = std::cmp::min(best_score, beta);
+                if alpha >= beta {
+                    break;
+                }
+            }
+
+            (best_score, best_move)
         }
     }
 
-    pub fn rollback(&mut self) -> Move {
-        self.max_value(self.tree_root_idx)
-            .1
-            .expect("the best value didn't have an associated move")
-            .to_owned()
+    pub fn rollback(&mut self, player_idx: usize) -> Move {
+        match player_idx {
+            0 => self
+                .max_value(self.tree_root_idx, i64::MIN, i64::MAX)
+                .1
+                .expect("the best value didn't have an associated move")
+                .to_owned(),
+            1 => self
+                .min_value(self.tree_root_idx, i64::MIN, i64::MAX)
+                .1
+                .expect("the best value didn't have an associated move")
+                .to_owned(),
+            _ => panic!(
+                "player index must be confined. this is a two person game"
+            ),
+        }
     }
 
     pub fn total_subnodes(&self) -> usize {
@@ -162,22 +194,11 @@ impl GameTree {
 
 impl GameNode {
     pub fn new(depth: u8, state: State) -> GameNode {
-        GameNode {
-            depth,
-            evaluation: None,
-            state,
-        }
+        GameNode { depth, state }
     }
 
-    fn evaluate(&self) -> i8 {
-        return (win_lose_condition(&self.state, self.state.current_turn)
-            .div(5)
-            + middle_proximity(&self.state, self.state.current_turn).div(5)
-            + middle_piece_differential(&self.state, self.state.current_turn)
-                .div(5)
-            + piece_differential(&self.state, self.state.current_turn).div(5)
-            + hold_important_pieces(&self.state, self.state.current_turn)
-                .div(5));
+    fn evaluate(&self, tree: &GameTree) -> i64 {
+        tree.weights.score(&self.state)
     }
 }
 

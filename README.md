@@ -4,8 +4,9 @@
 
 TODO:
 
-- need to combine in minimax (rather than just look at d + 1)
-- reintroduce caching of evaluation (via Options)
+- AI will often defer winning in favor of making a different move (because at a
+  given depth, it will still eventually win), putting it off for very long
+  periods of time
 - enable the player (at the CLI) an option to print the evaluation tree from the
   previous move
 - allow setting board state via position string from file

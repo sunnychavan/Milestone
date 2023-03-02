@@ -3,7 +3,41 @@ use super::{
     board::Move::Straight, pieces::Piece, player::Player,
     player::PossiblePlayer,
 };
-use std::fmt;
+use std::fmt::{self};
+
+#[derive(Default)]
+pub struct GameBuilder {
+    board: Board,
+    players: [PossiblePlayer; 2],
+}
+
+impl GameBuilder {
+    pub fn new() -> GameBuilder {
+        GameBuilder {
+            board: Board::new(),
+            players: [PossiblePlayer::default(), PossiblePlayer::default()],
+        }
+    }
+
+    pub fn set_player_1(mut self, p: PossiblePlayer) -> GameBuilder {
+        self.players[0] = p;
+        self
+    }
+
+    pub fn set_player_2(mut self, p: PossiblePlayer) -> GameBuilder {
+        self.players[1] = p;
+        self
+    }
+
+    pub fn build(self) -> State {
+        State {
+            active: true,
+            current_turn: 0,
+            board: self.board.to_owned(),
+            players: self.players,
+        }
+    }
+}
 
 #[derive(Clone)]
 pub struct State {
@@ -15,57 +49,48 @@ pub struct State {
 
 impl fmt::Debug for State {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        let mut repr = "Milestone: {\n".to_owned();
+        let mut fmt_struct = f.debug_struct("Milestone");
 
-        repr.push_str(&format!("active: {:?}\n", self.active));
+        fmt_struct.field("active", &self.active);
 
         let current_player = &self.players[usize::from(self.current_turn)];
-        repr.push_str(&format!(
-            "current_turn: {} {:?}\n",
-            current_player.name(),
-            current_player.get_pieces_type()
-        ));
+        fmt_struct.field(
+            "current_turn",
+            &format!(
+                "{} {:?}",
+                current_player.name(),
+                self.get_pieces_type_from_player(current_player)
+            ),
+        );
 
-        repr.push_str(&format!("board: {:?}\n", self.board));
+        fmt_struct.field("board", &self.board);
+        fmt_struct.field("players", &self.players);
 
-        repr.push_str(&format!("players: [\n"));
-        repr.push_str(&format!("  {:?},\n", self.players[0]));
-        repr.push_str(&format!("  {:?}\n", self.players[1]));
-        repr.push_str(&format!("]"));
-        repr.push_str(&"}");
-
-        write!(f, "{}", repr)
+        fmt_struct.finish()
     }
 }
 
 impl fmt::Display for State {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        let mut repr = "Milestone:\n".to_owned();
+        let mut fmt_struct = f.debug_struct("Milestone");
 
-        let current_player: &dyn Player =
-            &self.players[usize::from(self.current_turn)];
-        repr.push_str(&format!(
-            "  current_turn: {} {:?}\n",
-            current_player.name(),
-            current_player.get_pieces_type()
-        ));
+        let current_player = &self.players[usize::from(self.current_turn)];
+        fmt_struct.field(
+            "current_turn",
+            &format!(
+                "{} {:?}",
+                current_player.name(),
+                self.get_pieces_type_from_player(current_player)
+            ),
+        );
 
-        repr.push_str(&format!("  board: {}", self.board));
+        fmt_struct.field("board", &self.board);
 
-        write!(f, "{}", repr)
+        fmt_struct.finish()
     }
 }
 
 impl State {
-    pub fn new(players: &[PossiblePlayer; 2]) -> State {
-        State {
-            active: true,
-            current_turn: 0,
-            board: Board::new(),
-            players: players.clone(),
-        }
-    }
-
     // can_move() returns <T, _> if this players move would require a capture,
     //   <F, _> if it is a valid move without a capture,
     //   and <_, E(str)> if it is an invalid move
@@ -75,7 +100,7 @@ impl State {
         to: usize,
     ) -> Result<bool, &'static str> {
         let current_player_pieces =
-            self.players[usize::from(self.current_turn)].get_pieces_type();
+            self.get_pieces_type_from_idx(self.current_turn);
 
         let valid_start: bool = self
             .board
@@ -84,8 +109,8 @@ impl State {
 
         if valid_start {
             match self.board.possible_move(&from, &to, self.current_turn) {
-                Some(m @ Move::Diagonal(a, d))
-                | Some(m @ Move::Straight(a, d)) => {
+                Some(m @ Move::Diagonal(_a, d))
+                | Some(m @ Move::Straight(_a, d)) => {
                     match self.board.board[d].0 {
                     Some(existing_piece) if existing_piece == current_player_pieces => {
                         Err("can't occupy the same space as another one of your pieces")
@@ -113,7 +138,7 @@ impl State {
         capture: bool,
     ) -> Result<(), &'static str> {
         let current_player_pieces =
-            self.players[usize::from(self.current_turn)].get_pieces_type();
+            self.get_pieces_type_from_idx(self.current_turn);
 
         match (self.can_move(from, to), capture) {
             (Ok(true), true) => {
@@ -156,11 +181,33 @@ impl State {
             .into_iter()
             .filter(|&m| {
                 let (Diagonal(origin, dest) | Straight(origin, dest)) = m;
-                match self.can_move(origin, dest) {
-                    Ok(_) => true,
-                    _ => false,
-                }
+                matches!(self.can_move(origin, dest), Ok(_))
             })
             .collect::<Vec<Move>>()
+    }
+
+    pub fn get_pieces_type_from_player(&self, p: &PossiblePlayer) -> Piece {
+        // operating on the assumption that players are placed in order (black first)
+        let idx = self
+            .players
+            .iter()
+            .position(|plr| plr == p)
+            .expect("this player is not in the game");
+        self.get_pieces_type_from_idx(idx.try_into().unwrap())
+    }
+
+    pub fn get_pieces_type_from_idx(&self, idx: u8) -> Piece {
+        match idx {
+            0 => Piece::Black,
+            1 => Piece::White,
+            _ => panic!("games only have two players"),
+        }
+    }
+
+    pub fn play_one_turn(&mut self) {
+        let current_player =
+            self.players[self.current_turn as usize].to_owned();
+
+        current_player.one_turn(self);
     }
 }

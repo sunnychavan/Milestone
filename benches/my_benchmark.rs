@@ -1,21 +1,18 @@
 use criterion::{black_box, criterion_group, criterion_main, Criterion};
 use milestone::{
     self,
-    ai::tree::{GameNode, GameTree},
+    ai::tree::GameTree,
     game::{
-        gamestate::State,
-        pieces::Piece,
+        gamestate::{GameBuilder, State},
         player::{PossiblePlayer, AI},
     },
 };
 
 fn create_game_env() -> milestone::game::gamestate::State {
-    let players: [PossiblePlayer; 2] = [
-        PossiblePlayer::AI(AI::new("P1".to_string(), Piece::Black)),
-        PossiblePlayer::AI(AI::new("P2".to_string(), Piece::White)),
-    ];
-
-    return State::new(&players);
+    GameBuilder::new()
+        .set_player_1(PossiblePlayer::AI(AI::new("P1".to_string())))
+        .set_player_2(PossiblePlayer::AI(AI::new("P2".to_string())))
+        .build()
 }
 
 fn build_tree(state: &mut State, depth: u8) -> GameTree {
@@ -36,7 +33,7 @@ fn evaluate_tree_benchmark(c: &mut Criterion) {
     let tree = build_tree(&mut state, 2);
 
     c.bench_function("evaluate tree (depth: 2)", |b| {
-        b.iter(|| black_box(tree.clone()).minimax())
+        b.iter(|| black_box(tree.clone()).rollback(state.current_turn as usize))
     });
 }
 

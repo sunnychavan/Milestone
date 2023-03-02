@@ -1,27 +1,22 @@
-use crate::ai::heuristics::{
-    hold_important_pieces, middle_piece_differential, middle_proximity,
-    piece_differential, win_lose_condition,
-};
 use crate::game::board::Move;
 
 use crate::ai::tree::GameTree;
 
-use super::{gamestate::State, pieces::Piece};
+use super::gamestate::State;
 use core::fmt::Debug;
 use separator::Separatable;
-use std::fs::File;
+
 use std::io;
 use std::time::Instant;
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Default, PartialEq)]
 pub struct Person {
     name: String,
-    pieces: Piece,
 }
 
 impl Person {
-    pub fn new(name: String, pieces: Piece) -> Person {
-        Person { name, pieces }
+    pub fn new(name: String) -> Person {
+        Person { name }
     }
 }
 
@@ -30,36 +25,31 @@ impl Player for Person {
         self.name.clone()
     }
 
-    fn get_pieces_type(&self) -> Piece {
-        self.pieces
-    }
-
     fn one_turn(&self, state: &mut State) {
         println!("Input your move:");
 
         let mut input = String::new();
         match io::stdin().read_line(&mut input) {
             Ok(_) => {
-                match handle_move_input(state, &input.trim()) {
+                match handle_move_input(state, input.trim()) {
                     Ok(_) => (),
                     Err(e) => {
                         println!(
-                            "Couldn't process that move ({}). Please try again",
-                            e
+                            "Couldn't process that move ({e}). Please try again"
                         );
                         self.one_turn(state);
                     }
                 };
             }
-            Err(e) => println!("Oops. Something went wrong ({})", e),
+            Err(e) => println!("Oops. Something went wrong ({e})"),
         }
 
-        println!("{:?}", state);
+        println!("{state}");
     }
 }
 
-fn handle_move_input<'a>(
-    game: &'a mut State,
+fn handle_move_input(
+    game: &mut State,
     input: &str,
 ) -> Result<(), &'static str> {
     match input.split('-').collect::<Vec<&str>>()[..] {
@@ -75,15 +65,14 @@ fn handle_move_input<'a>(
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Default, PartialEq)]
 pub struct AI {
     name: String,
-    pieces: Piece,
 }
 
 impl AI {
-    pub fn new(name: String, pieces: Piece) -> AI {
-        AI { name, pieces }
+    pub fn new(name: String) -> AI {
+        AI { name }
     }
 }
 
@@ -92,19 +81,15 @@ impl Player for AI {
         self.name.clone()
     }
 
-    fn get_pieces_type(&self) -> Piece {
-        self.pieces
-    }
     fn one_turn(&self, state: &mut State) {
         let depth = 5;
         println!("AI thinking...");
         let before_tree_creation = Instant::now();
         let mut tree = GameTree::new(state.to_owned(), depth);
         tree.build_eval_tree();
-        println!("Game tree constructed");
         let after_tree_creation = Instant::now();
         let (Move::Diagonal(origin, dest) | Move::Straight(origin, dest)) =
-            tree.rollback();
+            tree.rollback(state.current_turn as usize);
         // tree.svg_from_tree();
         println!(
             "AI suggested {}-{} (depth of {}, {} total nodes) in {:.2} seconds ({:.3} to build, {:.3} to evaluate)",
@@ -114,46 +99,37 @@ impl Player for AI {
             after_tree_creation.elapsed().as_secs_f32(),
         );
         println!(
-            "Previous state heuristics (calculated from root node): Win({}), Middle({}), MPD({}), Piece Diff({}), IP({})",
-            win_lose_condition(state, state.current_turn),
-            middle_proximity(state, state.current_turn),
-            middle_piece_differential(state, state.current_turn),
-            piece_differential(state, state.current_turn),
-            hold_important_pieces(state, state.current_turn)
+            "Previous state heuristics (calculated from root node): {:?}",
+            tree.weights.new_with_state(state)
         );
         state
             .move_piece(origin, dest, true)
             .expect("could not play the AI-suggested move");
 
-        // TODO: this is the evaluation for the next turn (calculates the heuristics for the wrong person)
         println!(
-            "New state heuristics (calculated from root node): Win({}), Middle({}), MPD({}) Piece Diff({}), IP({})",
-            win_lose_condition(state, 1-state.current_turn),
-            middle_proximity(state, 1-state.current_turn),
-            middle_piece_differential(state, 1-state.current_turn),
-            piece_differential(state, 1-state.current_turn),
-            hold_important_pieces(state, 1-state.current_turn)
+            "New state heuristics (calculated from root node): {:?}",
+            tree.weights.new_with_state(state)
         );
-        println!("{:?}", state);
+        println!("{state}");
     }
 }
 
 pub trait Player {
-    // fn new(name: String, pieces: Piece) -> Self
-    // where
-    //     Self: Sized;
-
     fn one_turn(&self, state: &mut State);
 
     fn name(&self) -> String;
-
-    fn get_pieces_type(&self) -> Piece;
 }
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq)]
 pub enum PossiblePlayer {
     Person(Person),
     AI(AI),
+}
+
+impl Default for PossiblePlayer {
+    fn default() -> Self {
+        PossiblePlayer::Person(Person::default())
+    }
 }
 
 impl Player for PossiblePlayer {
@@ -161,13 +137,6 @@ impl Player for PossiblePlayer {
         match self {
             PossiblePlayer::Person(p) => p.name(),
             PossiblePlayer::AI(a) => a.name(),
-        }
-    }
-
-    fn get_pieces_type(&self) -> Piece {
-        match self {
-            PossiblePlayer::Person(p) => p.get_pieces_type(),
-            PossiblePlayer::AI(a) => a.get_pieces_type(),
         }
     }
 

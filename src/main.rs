@@ -2,6 +2,7 @@ pub mod ai;
 pub mod cli;
 pub mod game;
 
+#[allow(dead_code)]
 fn main() {
-    cli::two_player_game();
+    cli::play_game();
 }
