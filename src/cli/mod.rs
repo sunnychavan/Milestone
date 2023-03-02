@@ -79,7 +79,7 @@ pub fn choose_type_of_game() -> State {
 pub fn play_game() {
     let mut game = choose_type_of_game();
 
-    println!("{game:?}");
+    println!("{game}");
 
     while game.active {
         game.play_one_turn();

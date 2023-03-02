@@ -1,7 +1,3 @@
-use crate::ai::heuristics::{
-    hold_important_pieces, middle_piece_differential, middle_proximity,
-    piece_differential, win_lose_condition,
-};
 use crate::game::board::Move;
 
 use crate::ai::tree::GameTree;
@@ -94,7 +90,7 @@ impl Player for AI {
         println!("Game tree constructed");
         let after_tree_creation = Instant::now();
         let (Move::Diagonal(origin, dest) | Move::Straight(origin, dest)) =
-            tree.rollback();
+            tree.rollback(state.current_turn as usize);
         // tree.svg_from_tree();
         println!(
             "AI suggested {}-{} (depth of {}, {} total nodes) in {:.2} seconds ({:.3} to build, {:.3} to evaluate)",
@@ -104,25 +100,16 @@ impl Player for AI {
             after_tree_creation.elapsed().as_secs_f32(),
         );
         println!(
-            "Previous state heuristics (calculated from root node): Win({}), Middle({}), MPD({}), Piece Diff({}), IP({})",
-            win_lose_condition(state, state.current_turn),
-            middle_proximity(state, state.current_turn),
-            middle_piece_differential(state, state.current_turn),
-            piece_differential(state, state.current_turn),
-            hold_important_pieces(state, state.current_turn)
+            "Previous state heuristics (calculated from root node): {:?}",
+            tree.weights.new_with_state(state)
         );
         state
             .move_piece(origin, dest, true)
             .expect("could not play the AI-suggested move");
 
-        // TODO: this is the evaluation for the next turn (calculates the heuristics for the wrong person)
         println!(
-            "New state heuristics (calculated from root node): Win({}), Middle({}), MPD({}) Piece Diff({}), IP({})",
-            win_lose_condition(state, 1-state.current_turn),
-            middle_proximity(state, 1-state.current_turn),
-            middle_piece_differential(state, 1-state.current_turn),
-            piece_differential(state, 1-state.current_turn),
-            hold_important_pieces(state, 1-state.current_turn)
+            "New state heuristics (calculated from root node): {:?}",
+            tree.weights.new_with_state(state)
         );
         println!("{state}");
     }
