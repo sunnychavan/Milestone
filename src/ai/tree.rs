@@ -95,9 +95,12 @@ impl GameTree {
         }
     }
 
-    fn max_value(&self, root_idx: NodeIndex) -> (i64, Option<&Move>) {
-        let result;
-
+    fn max_value(
+        &self,
+        root_idx: NodeIndex,
+        mut alpha: i64,
+        beta: i64,
+    ) -> (i64, Option<&Move>) {
         let mut outgoing_moves = self.tree.edges(root_idx).peekable();
         // this node is a leaf node / at max-depth:
         if outgoing_moves.peek().is_none() {
@@ -105,23 +108,36 @@ impl GameTree {
             (root_node.evaluate(self), None)
         } else {
             // to maximize this node, minimize its children
-            let best_move;
-            (result, best_move) = self
-                .tree
-                .edges(root_idx)
-                .map(|edge| {
-                    let d = edge.target();
-                    (self.min_value(d).0, edge.weight())
-                })
-                .max_by_key(|elt| elt.0)
-                .unwrap();
-            (result, Some(best_move))
+            let mut best_score: i64 = i64::MIN;
+            let mut best_move: Option<&Move> = None;
+
+            for edge in outgoing_moves {
+                let d = edge.target();
+                let new_score = self.min_value(d, alpha, beta).0;
+                let new_move = Some(edge.weight());
+
+                if new_score > best_score {
+                    best_score = new_score;
+                    best_move = new_move;
+                }
+
+                // alpha / beta
+                alpha = std::cmp::max(best_score, alpha);
+                if alpha >= beta {
+                    break;
+                }
+            }
+
+            (best_score, best_move)
         }
     }
 
-    fn min_value(&self, root_idx: NodeIndex) -> (i64, Option<&Move>) {
-        let result;
-
+    fn min_value(
+        &self,
+        root_idx: NodeIndex,
+        alpha: i64,
+        mut beta: i64,
+    ) -> (i64, Option<&Move>) {
         let mut outgoing_moves = self.tree.edges(root_idx).peekable();
         // this node is a leaf node / at max-depth:
         if outgoing_moves.peek().is_none() {
@@ -129,29 +145,39 @@ impl GameTree {
             (root_node.evaluate(self), None)
         } else {
             // to minimize this node, maximize its children
-            let best_move;
-            (result, best_move) = self
-                .tree
-                .edges(root_idx)
-                .map(|edge| {
-                    let d = edge.target();
-                    (self.max_value(d).0, edge.weight())
-                })
-                .min_by_key(|elt| elt.0)
-                .unwrap();
-            (result, Some(best_move))
+            let mut best_score: i64 = i64::MAX;
+            let mut best_move: Option<&Move> = None;
+
+            for edge in outgoing_moves {
+                let d = edge.target();
+                let new_score = self.max_value(d, alpha, beta).0;
+                let new_move = Some(edge.weight());
+
+                if new_score < best_score {
+                    best_score = new_score;
+                    best_move = new_move;
+                }
+
+                // alpha / beta
+                beta = std::cmp::min(best_score, beta);
+                if alpha >= beta {
+                    break;
+                }
+            }
+
+            (best_score, best_move)
         }
     }
 
     pub fn rollback(&mut self, player_idx: usize) -> Move {
         match player_idx {
             0 => self
-                .max_value(self.tree_root_idx)
+                .max_value(self.tree_root_idx, i64::MIN, i64::MAX)
                 .1
                 .expect("the best value didn't have an associated move")
                 .to_owned(),
             1 => self
-                .min_value(self.tree_root_idx)
+                .min_value(self.tree_root_idx, i64::MIN, i64::MAX)
                 .1
                 .expect("the best value didn't have an associated move")
                 .to_owned(),
