@@ -87,7 +87,6 @@ impl Player for AI {
         let before_tree_creation = Instant::now();
         let mut tree = GameTree::new(state.to_owned(), depth);
         tree.build_eval_tree();
-        println!("Game tree constructed");
         let after_tree_creation = Instant::now();
         let (Move::Diagonal(origin, dest) | Move::Straight(origin, dest)) =
             tree.rollback(state.current_turn as usize);
