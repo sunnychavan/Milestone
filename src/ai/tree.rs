@@ -10,6 +10,7 @@ use std::process::Stdio;
 
 use std::iter::Iterator;
 use std::ops::Index;
+use std::time::Duration;
 
 use crate::game::board::Move;
 
@@ -210,3 +211,13 @@ fn create_svg_from_file(dot_file: &str, svg_file: File) {
         .spawn()
         .expect("failed to launch dot process");
 }
+
+// pub fn get_best_move(state: &State) -> Move {}
+
+// pub struct SuggestedMove {
+//     max_depth_considered: u8,
+//     time_building_trees: Duration,
+//     time_evaluating_trees: Duration,
+//     total_nodes_considered: u64,
+//     heuristical_reasoning: Wei,
+// }
