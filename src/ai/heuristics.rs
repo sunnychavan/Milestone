@@ -3,7 +3,7 @@
 
 use std::{
     collections::{HashMap, HashSet},
-    fmt::Debug,
+    fmt::{format, Debug},
     iter::zip,
     ops::Div,
 };
@@ -12,7 +12,10 @@ use enum_dispatch::enum_dispatch;
 use lazy_static::lazy_static;
 
 use crate::game::{
-    board::Hole, gamestate::State, pieces::Piece::Black, pieces::Piece::White,
+    board::{Hole, Move},
+    gamestate::State,
+    pieces::Piece::Black,
+    pieces::Piece::White,
 };
 
 #[enum_dispatch]
@@ -226,8 +229,8 @@ impl Heuristic for WinLose {
         let blacks_home = state.board.board[0];
         let whites_home = state.board.board[36];
         match (blacks_home, whites_home) {
-            (Hole(Some(White)), _) => -100,
-            (_, Hole(Some(Black))) => 100,
+            (Hole(Some(White)), _) => -1000,
+            (_, Hole(Some(Black))) => 1000,
             _ => 0,
         }
     }
@@ -239,10 +242,10 @@ impl Heuristic for WinLose {
 
 fn unsigned100_normalize(min: i64, max: i64, value: i64) -> i64 {
     //  ((2 * (value - lb)) / (ub - lb)) - 1) * 100
-    let numerator = 100 * 2 * (value - min);
+    let numerator = 1000 * 2 * (value - min);
     let denominator = max - min;
 
-    numerator.div(denominator) - 100
+    numerator.div(denominator) - 1000
 }
 
 // HEURISTIC HELPER FUNCTIONS ( E.G. LOWERBOUND UPPERBOUND CALCULATORS ) //
@@ -297,15 +300,20 @@ impl HeuristicWeights {
         result
     }
 
-    pub fn difference(
+    pub fn new_with_state_and_move(
         &self,
-        old_state: &State,
-        new_state: &State,
+        mut state: State,
+        m: Move,
     ) -> HeuristicWeightsWithTwoStates {
+        let (Move::Diagonal(origin, dest) | Move::Straight(origin, dest)) = m;
+
         HeuristicWeightsWithTwoStates {
             heuristic_weights: self.to_owned(),
-            old_state: old_state.to_owned(),
-            new_state: new_state.to_owned(),
+            old_state: state.clone(),
+            new_state: {
+                state.move_piece(origin, dest, true).unwrap();
+                state
+            },
         }
     }
 }
@@ -346,25 +354,23 @@ pub struct HeuristicWeightsWithTwoStates {
 
 impl Debug for HeuristicWeightsWithTwoStates {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        let mut fmt_struct = format!(
-            "Total Score: {} -> {}",
-            &self.heuristic_weights.score(&self.old_state),
-            &self.heuristic_weights.score(&self.new_state),
-        );
+        let mut fmt_struct = f.debug_struct("Heuristic Change");
 
         for (heuristic_fn, w) in zip(
             self.heuristic_weights.functions.iter(),
             self.heuristic_weights.weights,
         ) {
-            fmt_struct.push_str(&format!(
-                "\n\t{} (weight {}): {} -> {}",
+            fmt_struct.field(
                 heuristic_fn.name(),
-                w,
-                heuristic_fn.score(&self.old_state),
-                heuristic_fn.score(&self.new_state),
-            ));
+                &format!(
+                    "(weight {}): {} -> {}",
+                    w,
+                    heuristic_fn.score(&self.old_state),
+                    heuristic_fn.score(&self.new_state)
+                ),
+            );
         }
 
-        f.write_str(&fmt_struct)
+        fmt_struct.finish()
     }
 }

@@ -1,6 +1,6 @@
 use crate::game::board::Move;
 
-use crate::ai::tree::GameTree;
+use crate::ai::tree::{get_best_move, GameTree};
 
 use super::gamestate::State;
 use core::fmt::Debug;
@@ -82,34 +82,16 @@ impl Player for AI {
     }
 
     fn one_turn(&self, state: &mut State) {
-        let depth = 5;
-        println!("AI thinking...");
-        let old_state = state.clone();
-
-        let before_tree_creation = Instant::now();
-        let mut tree = GameTree::new(state.to_owned(), depth);
-        tree.build_eval_tree();
+        let sugg_move = get_best_move(state);
 
         let (Move::Diagonal(origin, dest) | Move::Straight(origin, dest)) =
-            tree.rollback(state.current_turn as usize);
+            sugg_move.suggestion;
 
-        // let (Move::Diagonal(origin, dest) | Move::Straight(origin, dest)) =
-        //     get_best_move(state);
-        // tree.svg_from_tree();
-        println!(
-            "AI suggested {}-{} (depth of {}) in {:.2} seconds",
-            origin,
-            dest,
-            depth,
-            before_tree_creation.elapsed().as_secs_f32(),
-        );
-        println!(
-            "AI's reasoning:\n{:?}",
-            tree.weights.difference(&old_state, state)
-        );
         state
             .move_piece(origin, dest, true)
             .expect("could not play the AI-suggested move");
+
+        println!("{sugg_move:#?}");
 
         println!("{state}");
     }

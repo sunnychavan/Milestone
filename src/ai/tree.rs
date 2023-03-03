@@ -2,16 +2,20 @@ use petgraph::dot::Dot;
 use petgraph::graph::DiGraph;
 use petgraph::graph::NodeIndex;
 use petgraph::visit::EdgeRef;
+use separator::Separatable;
 
+use std::fmt::Debug;
 use std::fs::File;
 use std::io::Write;
 use std::process::Command;
 use std::process::Stdio;
+use std::time::Instant;
 
 use std::iter::Iterator;
 use std::ops::Index;
 use std::time::Duration;
 
+use crate::ai::heuristics::HeuristicWeightsWithTwoStates;
 use crate::game::board::Move;
 
 use super::super::game::board::Move::{Diagonal, Straight};
@@ -212,12 +216,49 @@ fn create_svg_from_file(dot_file: &str, svg_file: File) {
         .expect("failed to launch dot process");
 }
 
-// pub fn get_best_move(state: &State) -> Move {}
+pub fn get_best_move(state: &State) -> SuggestedMove {
+    let before_tree_creation = Instant::now();
+    let mut tree = GameTree::new(state.to_owned(), 5);
+    tree.build_eval_tree();
+    let after_tree_creation = Instant::now();
+    let (m @ Move::Diagonal(origin, dest) | m @ Move::Straight(origin, dest)) =
+        tree.rollback(state.current_turn as usize);
 
-// pub struct SuggestedMove {
-//     max_depth_considered: u8,
-//     time_building_trees: Duration,
-//     time_evaluating_trees: Duration,
-//     total_nodes_considered: u64,
-//     heuristical_reasoning: Wei,
-// }
+    SuggestedMove {
+        suggestion: m,
+        max_depth_considered: 5,
+        time_building_trees: before_tree_creation
+            .duration_since(after_tree_creation),
+        time_evaluating_trees: Instant::now()
+            .duration_since(after_tree_creation),
+        total_nodes_considered: tree.total_subnodes(),
+        heuristical_reasoning: tree
+            .weights
+            .new_with_state_and_move(state.clone(), m),
+    }
+}
+
+pub struct SuggestedMove {
+    pub suggestion: Move,
+    max_depth_considered: u8,
+    time_building_trees: Duration,
+    time_evaluating_trees: Duration,
+    total_nodes_considered: usize,
+    heuristical_reasoning: HeuristicWeightsWithTwoStates,
+}
+
+impl Debug for SuggestedMove {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_fmt(format_args!(
+            "AI suggested {:?} ({} nodes considered, depth of {}) in {:.2} seconds ({:.2} to build, {:.2} to evaluate) with reasoning: {:#?}",
+            self.suggestion,
+            self.total_nodes_considered.separated_string(),
+            self.max_depth_considered,
+            (self.time_building_trees + self.time_evaluating_trees)
+                .as_secs_f32(),
+            self.time_building_trees.as_secs_f32(),
+            self.time_evaluating_trees.as_secs_f32(),
+            self.heuristical_reasoning,
+        ))
+    }
+}
