@@ -103,13 +103,15 @@ impl Player for AI {
             depth,
             before_tree_creation.elapsed().as_secs_f32(),
         );
+        
+        state
+            .move_piece(origin, dest, true)
+            .expect("could not play the AI-suggested move");
+        
         println!(
             "AI's reasoning:\n{:?}",
             tree.weights.difference(&old_state, state)
         );
-        state
-            .move_piece(origin, dest, true)
-            .expect("could not play the AI-suggested move");
 
         println!("{state}");
     }

@@ -63,31 +63,29 @@ struct HoldImportantPieces;
 
 impl Heuristic for HoldImportantPieces {
     fn score(&self, state: &State) -> i64 {
-        lazy_static! {
-            static ref IMPORTANT_PIECES: HashMap<usize, i64> = {
-                let mut hm = HashMap::new();
-                hm.insert(0, 3);
-                hm.insert(1, 1);
-                hm.insert(2, 1);
-                hm.insert(36, 3);
-                hm.insert(34, 1);
-                hm.insert(35, 1);
-                hm
-            };
-        }
-
+        let mut important_pieces_black: HashMap<usize, i64> = HashMap::new(); 
+        let mut important_pieces_white: HashMap<usize, i64> = HashMap::new();    
+   
+        important_pieces_black.insert(0, 3);
+        important_pieces_black.insert(1, 2);
+        important_pieces_black.insert(2, 2);
+    
+        important_pieces_white.insert(36, 3);
+        important_pieces_white.insert(34, 2);
+        important_pieces_white.insert(35, 2);
+            
         let black_score: i64 = state
             .board
             .current_players_pieces(0)
             .iter()
-            .map(|&elt| IMPORTANT_PIECES.get(&elt).unwrap_or(&0))
+            .map(|&elt| important_pieces_black.get(&elt).unwrap_or(&0))
             .sum();
 
         let white_score: i64 = state
             .board
             .current_players_pieces(1)
             .iter()
-            .map(|&elt| IMPORTANT_PIECES.get(&elt).unwrap_or(&0))
+            .map(|&elt| important_pieces_white.get(&elt).unwrap_or(&0))
             .sum();
 
         unsigned100_normalize(-5, 5, black_score - white_score)
