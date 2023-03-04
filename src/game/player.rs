@@ -1,13 +1,13 @@
 use crate::game::board::Move;
 
-use crate::ai::tree::GameTree;
+use crate::ai::tree::{get_best_move};
 
 use super::gamestate::State;
 use core::fmt::Debug;
-use separator::Separatable;
+
 
 use std::io;
-use std::time::Instant;
+use std::time::{Duration};
 
 #[derive(Debug, Clone, Default, PartialEq)]
 pub struct Person {
@@ -82,34 +82,17 @@ impl Player for AI {
     }
 
     fn one_turn(&self, state: &mut State) {
-        let depth = 5;
-        println!("AI thinking...");
-        let before_tree_creation = Instant::now();
-        let mut tree = GameTree::new(state.to_owned(), depth);
-        tree.build_eval_tree();
-        let after_tree_creation = Instant::now();
+        let sugg_move = get_best_move(state, Duration::from_millis(700));
+
         let (Move::Diagonal(origin, dest) | Move::Straight(origin, dest)) =
-            tree.rollback(state.current_turn as usize);
-        // tree.svg_from_tree();
-        println!(
-            "AI suggested {}-{} (depth of {}, {} total nodes) in {:.2} seconds ({:.3} to build, {:.3} to evaluate)",
-            origin, dest, depth, tree.total_subnodes().separated_string(),
-            before_tree_creation.elapsed().as_secs_f32(),
-            after_tree_creation.duration_since(before_tree_creation).as_secs_f32(),
-            after_tree_creation.elapsed().as_secs_f32(),
-        );
-        println!(
-            "Previous state heuristics (calculated from root node): {:?}",
-            tree.weights.new_with_state(state)
-        );
+            sugg_move.suggestion;
+
         state
             .move_piece(origin, dest, true)
             .expect("could not play the AI-suggested move");
 
-        println!(
-            "New state heuristics (calculated from root node): {:?}",
-            tree.weights.new_with_state(state)
-        );
+        println!("{sugg_move:#?}");
+
         println!("{state}");
     }
 }

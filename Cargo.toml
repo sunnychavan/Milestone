@@ -12,6 +12,7 @@ name = "milestone"
 separator = "0.4.1"
 petgraph = "0.6.3"
 lazy_static = "1.4.0"
+enum_dispatch = "0.3.11"
 
 [dev-dependencies]
 criterion = "0.4"
