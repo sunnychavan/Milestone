@@ -1,7 +1,7 @@
 use criterion::{black_box, criterion_group, criterion_main, Criterion};
 use milestone::{
     self,
-    ai::tree::{get_best_move, GameTree},
+    ai::tree::GameTree,
     game::{
         gamestate::{GameBuilder, State},
         player::{PossiblePlayer, AI},

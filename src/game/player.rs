@@ -1,13 +1,13 @@
 use crate::game::board::Move;
 
-use crate::ai::tree::{get_best_move, GameTree};
+use crate::ai::tree::{get_best_move};
 
 use super::gamestate::State;
 use core::fmt::Debug;
-use separator::Separatable;
+
 
 use std::io;
-use std::time::{Duration, Instant};
+use std::time::{Duration};
 
 #[derive(Debug, Clone, Default, PartialEq)]
 pub struct Person {

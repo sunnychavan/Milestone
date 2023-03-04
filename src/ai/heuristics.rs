@@ -3,7 +3,7 @@
 
 use std::{
     collections::{HashMap, HashSet},
-    fmt::{format, Debug},
+    fmt::Debug,
     iter::zip,
     ops::Div,
 };
