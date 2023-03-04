@@ -7,7 +7,7 @@ use core::fmt::Debug;
 use separator::Separatable;
 
 use std::io;
-use std::time::Instant;
+use std::time::{Duration, Instant};
 
 #[derive(Debug, Clone, Default, PartialEq)]
 pub struct Person {
@@ -82,7 +82,7 @@ impl Player for AI {
     }
 
     fn one_turn(&self, state: &mut State) {
-        let sugg_move = get_best_move(state);
+        let sugg_move = get_best_move(state, Duration::from_millis(700));
 
         let (Move::Diagonal(origin, dest) | Move::Straight(origin, dest)) =
             sugg_move.suggestion;

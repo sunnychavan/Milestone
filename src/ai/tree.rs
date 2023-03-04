@@ -216,25 +216,45 @@ fn create_svg_from_file(dot_file: &str, svg_file: File) {
         .expect("failed to launch dot process");
 }
 
-pub fn get_best_move(state: &State) -> SuggestedMove {
-    let before_tree_creation = Instant::now();
-    let mut tree = GameTree::new(state.to_owned(), 5);
-    tree.build_eval_tree();
-    let after_tree_creation = Instant::now();
-    let (m @ Move::Diagonal(origin, dest) | m @ Move::Straight(origin, dest)) =
-        tree.rollback(state.current_turn as usize);
+pub fn get_best_move(state: &State, time_limit: Duration) -> SuggestedMove {
+    let function_beginning = Instant::now();
+    let mut depth_to_search = 0;
+    let mut best_move_opt: Option<Move> = None;
+    let mut best_tree_opt: Option<GameTree> = None;
+    let mut time_building = Duration::ZERO;
+    let mut time_evaluating = Duration::ZERO;
+
+    while Instant::now().duration_since(function_beginning) < time_limit {
+        depth_to_search += 1;
+
+        let before_building_tree = Instant::now();
+        let mut tree = GameTree::new(state.to_owned(), depth_to_search);
+        tree.build_eval_tree();
+        let after_building_tree = Instant::now();
+        let (m @ Move::Diagonal(_, _) | m @ Move::Straight(_, _)) =
+            tree.rollback(state.current_turn as usize);
+        let after_evaluating_tree = Instant::now();
+
+        best_move_opt = Some(m);
+        best_tree_opt = Some(tree);
+        time_building +=
+            after_building_tree.duration_since(before_building_tree);
+        time_evaluating +=
+            after_evaluating_tree.duration_since(after_building_tree);
+    }
+
+    let best_move = best_move_opt.expect("could not find a best move in time");
+    let best_tree = best_tree_opt.expect("could not find a best tree in time");
 
     SuggestedMove {
-        suggestion: m,
-        max_depth_considered: 5,
-        time_building_trees: before_tree_creation
-            .duration_since(after_tree_creation),
-        time_evaluating_trees: Instant::now()
-            .duration_since(after_tree_creation),
-        total_nodes_considered: tree.total_subnodes(),
-        heuristical_reasoning: tree
+        suggestion: best_move,
+        max_depth_considered: depth_to_search,
+        time_building_trees: time_building,
+        time_evaluating_trees: time_evaluating,
+        total_nodes_considered: best_tree.total_subnodes(),
+        heuristical_reasoning: best_tree
             .weights
-            .new_with_state_and_move(state.clone(), m),
+            .new_with_state_and_move(state.clone(), best_move),
     }
 }
 
