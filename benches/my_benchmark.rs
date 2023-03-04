@@ -30,10 +30,10 @@ fn build_tree_benchmark(c: &mut Criterion) {
 
 fn evaluate_tree_benchmark(c: &mut Criterion) {
     let mut state = create_game_env();
-    let mut tree = build_tree(&mut state, 2);
+    let tree = build_tree(&mut state, 2);
 
     c.bench_function("evaluate tree (depth: 2)", |b| {
-        b.iter(|| black_box(tree.rollback(0)))
+        b.iter(|| black_box(tree.clone().rollback(0)))
     });
 }
 
