@@ -12,8 +12,13 @@ use enum_dispatch::enum_dispatch;
 use lazy_static::lazy_static;
 
 use crate::game::{
-    board::Hole, board::Move::Straight, gamestate::State, pieces::Piece::Black, pieces::Piece::White,
+    board::{Hole, Move},
+    gamestate::State,
+    pieces::Piece::Black,
+    pieces::Piece::White,
 };
+
+use super::location_maps;
 
 #[enum_dispatch]
 #[derive(Clone)]
@@ -102,65 +107,18 @@ struct MiddleProximity;
 
 impl Heuristic for MiddleProximity {
     fn score(&self, state: &State) -> i64 {
-        lazy_static! {
-            static ref MIDDLE_PROXIMITY: HashMap<usize, i64> = {
-                let mut middle_proximity: HashMap<usize, i64> = HashMap::new();
-                middle_proximity.insert(0, 6);
-                middle_proximity.insert(4, 6);
-                middle_proximity.insert(11, 6);
-                middle_proximity.insert(18, 6);
-                middle_proximity.insert(25, 6);
-                middle_proximity.insert(32, 6);
-                middle_proximity.insert(36, 6);
-
-                middle_proximity.insert(1, 3);
-                middle_proximity.insert(2, 3);
-                middle_proximity.insert(7, 3);
-                middle_proximity.insert(8, 3);
-                middle_proximity.insert(14, 3);
-                middle_proximity.insert(15, 3);
-                middle_proximity.insert(21, 3);
-                middle_proximity.insert(22, 3);
-                middle_proximity.insert(28, 3);
-                middle_proximity.insert(29, 3);
-                middle_proximity.insert(34, 3);
-                middle_proximity.insert(35, 3);
-
-                middle_proximity.insert(3, 1);
-                middle_proximity.insert(5, 1);
-                middle_proximity.insert(10, 1);
-                middle_proximity.insert(12, 1);
-                middle_proximity.insert(17, 1);
-                middle_proximity.insert(19, 1);
-                middle_proximity.insert(24, 1);
-                middle_proximity.insert(26, 1);
-                middle_proximity.insert(31, 1);
-                middle_proximity.insert(33, 1);
-
-                middle_proximity.insert(6, 0);
-                middle_proximity.insert(9, 0);
-                middle_proximity.insert(13, 0);
-                middle_proximity.insert(16, 0);
-                middle_proximity.insert(20, 0);
-                middle_proximity.insert(23, 0);
-                middle_proximity.insert(27, 0);
-                middle_proximity.insert(30, 0);
-
-                middle_proximity
-            };
-        }
         let black_score: i64 = state
             .board
             .current_players_pieces(0)
             .iter()
-            .map(|&elt| MIDDLE_PROXIMITY.get(&elt).unwrap_or(&0))
+            .map(|&elt| location_maps::middle_proximity(elt))
             .sum();
 
         let white_score: i64 = state
             .board
             .current_players_pieces(1)
             .iter()
-            .map(|&elt| MIDDLE_PROXIMITY.get(&elt).unwrap_or(&0))
+            .map(|&elt| location_maps::middle_proximity(elt))
             .sum();
 
         unsigned100_normalize(
@@ -225,8 +183,8 @@ impl Heuristic for WinLose {
         let blacks_home = state.board.board[0];
         let whites_home = state.board.board[36];
         match (blacks_home, whites_home) {
-            (Hole(Some(White)), _) => -100,
-            (_, Hole(Some(Black))) => 100,
+            (Hole(Some(White)), _) => -1000,
+            (_, Hole(Some(Black))) => 1000,
             _ => 0,
         }
     }
@@ -361,10 +319,10 @@ impl Heuristic for ValueOfDefendedEmptyHexes{
 
 fn unsigned100_normalize(min: i64, max: i64, value: i64) -> i64 {
     //  ((2 * (value - lb)) / (ub - lb)) - 1) * 100
-    let numerator = 100 * 2 * (value - min);
+    let numerator = 1000 * 2 * (value - min);
     let denominator = max - min;
 
-    numerator.div(denominator) - 100
+    numerator.div(denominator) - 1000
 }
 
 // HEURISTIC HELPER FUNCTIONS ( E.G. LOWERBOUND UPPERBOUND CALCULATORS ) //
@@ -420,15 +378,20 @@ impl HeuristicWeights {
         result
     }
 
-    pub fn difference(
+    pub fn new_with_state_and_move(
         &self,
-        old_state: &State,
-        new_state: &State,
+        mut state: State,
+        m: Move,
     ) -> HeuristicWeightsWithTwoStates {
+        let (Move::Diagonal(origin, dest) | Move::Straight(origin, dest)) = m;
+
         HeuristicWeightsWithTwoStates {
             heuristic_weights: self.to_owned(),
-            old_state: old_state.to_owned(),
-            new_state: new_state.to_owned(),
+            old_state: state.clone(),
+            new_state: {
+                state.move_piece(origin, dest, true).unwrap();
+                state
+            },
         }
     }
 }
@@ -469,25 +432,23 @@ pub struct HeuristicWeightsWithTwoStates {
 
 impl Debug for HeuristicWeightsWithTwoStates {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        let mut fmt_struct = format!(
-            "Total Score: {} -> {}",
-            &self.heuristic_weights.score(&self.old_state),
-            &self.heuristic_weights.score(&self.new_state),
-        );
+        let mut fmt_struct = f.debug_struct("Heuristic Change");
 
         for (heuristic_fn, w) in zip(
             self.heuristic_weights.functions.iter(),
             self.heuristic_weights.weights,
         ) {
-            fmt_struct.push_str(&format!(
-                "\n\t{} (weight {}): {} -> {}",
+            fmt_struct.field(
                 heuristic_fn.name(),
-                w,
-                heuristic_fn.score(&self.old_state),
-                heuristic_fn.score(&self.new_state),
-            ));
+                &format!(
+                    "(weight {}): {} -> {}",
+                    w,
+                    heuristic_fn.score(&self.old_state),
+                    heuristic_fn.score(&self.new_state)
+                ),
+            );
         }
 
-        f.write_str(&fmt_struct)
+        fmt_struct.finish()
     }
 }
