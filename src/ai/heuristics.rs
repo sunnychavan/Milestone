@@ -12,7 +12,7 @@ use enum_dispatch::enum_dispatch;
 use lazy_static::lazy_static;
 
 use crate::game::{
-    board::Hole, gamestate::State, pieces::Piece::Black, pieces::Piece::White,
+    board::Hole, board::Move::Straight, gamestate::State, pieces::Piece::Black, pieces::Piece::White,
 };
 
 #[enum_dispatch]
@@ -23,6 +23,7 @@ enum Heuristics {
     MiddleProximity,
     MiddlePieceDifferential,
     WinLose,
+    NumberDefendedEmptyHexes
 }
 
 #[enum_dispatch(Heuristics)]
@@ -235,6 +236,65 @@ impl Heuristic for WinLose {
     }
 }
 
+#[derive(Clone)]
+struct NumberDefendedEmptyHexes;
+
+impl Heuristic for NumberDefendedEmptyHexes{
+
+    fn score(&self,state: &State) -> i64 {
+        let black_pieces = state
+        .board
+        .current_players_pieces(0);
+
+        let white_pieces = state
+            .board
+            .current_players_pieces(1);
+
+        let black_straight_hexes  = black_pieces
+            .iter()
+            .map(|&elt| state.board.get_straight_hex(0, elt));
+        
+        let black_score = black_straight_hexes.filter(|&elt| {
+            match elt {
+                Some(i) => {
+                    // let hex_taken = black_pieces.contains(i) || white_pieces.contains(i);
+                    // !hex_taken
+                    let straight_hole = state.board.board[*i];
+                    match straight_hole {
+                        Hole(Some(_)) => false,
+                        Hole(None) => true
+                    }
+                }
+                None => false
+            }
+        }).count();
+
+        let white_straight_hexes  = white_pieces
+            .iter()
+            .map(|&elt| state.board.get_straight_hex(1, elt));
+        
+        let white_score = white_straight_hexes.filter(|&elt| {
+            match elt {
+                Some(i) => {
+                    // let hex_taken = black_pieces.contains(i) || white_pieces.contains(i);
+                    // !hex_taken
+                    let straight_hole = state.board.board[*i];
+                    match straight_hole {
+                        Hole(Some(_)) => false,
+                        Hole(None) => true
+                    }
+                }
+                None => false
+            }
+        }).count();       
+        unsigned100_normalize(-10, 10, i64::try_from(black_score).unwrap()-i64::try_from(white_score).unwrap())            
+    } 
+
+    fn name(&self) ->  &'static str {
+        "Number of Defended Empty Hexes"
+    }
+}
+
 fn unsigned100_normalize(min: i64, max: i64, value: i64) -> i64 {
     //  ((2 * (value - lb)) / (ub - lb)) - 1) * 100
     let numerator = 100 * 2 * (value - min);
@@ -254,8 +314,8 @@ fn upperbound_middle_proximity(
 
 #[derive(Clone)]
 pub struct HeuristicWeights {
-    functions: [Heuristics; 5],
-    weights: [i64; 5],
+    functions: [Heuristics; 6],
+    weights: [i64; 6],
 }
 
 impl Debug for HeuristicWeights {
@@ -265,7 +325,7 @@ impl Debug for HeuristicWeights {
 }
 
 impl HeuristicWeights {
-    pub fn new(weights: [i64; 5]) -> Self {
+    pub fn new(weights: [i64; 6]) -> Self {
         HeuristicWeights {
             functions: [
                 Heuristics::PieceDifferential(PieceDifferential),
@@ -273,6 +333,7 @@ impl HeuristicWeights {
                 Heuristics::MiddleProximity(MiddleProximity),
                 Heuristics::MiddlePieceDifferential(MiddlePieceDifferential),
                 Heuristics::WinLose(WinLose),
+                Heuristics::NumberDefendedEmptyHexes(NumberDefendedEmptyHexes),
             ],
             weights,
         }
