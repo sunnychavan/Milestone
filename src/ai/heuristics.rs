@@ -18,6 +18,8 @@ use crate::game::{
     pieces::Piece::White,
 };
 
+use super::location_maps;
+
 #[enum_dispatch]
 #[derive(Clone)]
 enum Heuristics {
@@ -106,65 +108,18 @@ struct MiddleProximity;
 
 impl Heuristic for MiddleProximity {
     fn score(&self, state: &State) -> i64 {
-        lazy_static! {
-            static ref MIDDLE_PROXIMITY: HashMap<usize, i64> = {
-                let mut middle_proximity: HashMap<usize, i64> = HashMap::new();
-                middle_proximity.insert(0, 6);
-                middle_proximity.insert(4, 6);
-                middle_proximity.insert(11, 6);
-                middle_proximity.insert(18, 6);
-                middle_proximity.insert(25, 6);
-                middle_proximity.insert(32, 6);
-                middle_proximity.insert(36, 6);
-
-                middle_proximity.insert(1, 3);
-                middle_proximity.insert(2, 3);
-                middle_proximity.insert(7, 3);
-                middle_proximity.insert(8, 3);
-                middle_proximity.insert(14, 3);
-                middle_proximity.insert(15, 3);
-                middle_proximity.insert(21, 3);
-                middle_proximity.insert(22, 3);
-                middle_proximity.insert(28, 3);
-                middle_proximity.insert(29, 3);
-                middle_proximity.insert(34, 3);
-                middle_proximity.insert(35, 3);
-
-                middle_proximity.insert(3, 1);
-                middle_proximity.insert(5, 1);
-                middle_proximity.insert(10, 1);
-                middle_proximity.insert(12, 1);
-                middle_proximity.insert(17, 1);
-                middle_proximity.insert(19, 1);
-                middle_proximity.insert(24, 1);
-                middle_proximity.insert(26, 1);
-                middle_proximity.insert(31, 1);
-                middle_proximity.insert(33, 1);
-
-                middle_proximity.insert(6, 0);
-                middle_proximity.insert(9, 0);
-                middle_proximity.insert(13, 0);
-                middle_proximity.insert(16, 0);
-                middle_proximity.insert(20, 0);
-                middle_proximity.insert(23, 0);
-                middle_proximity.insert(27, 0);
-                middle_proximity.insert(30, 0);
-
-                middle_proximity
-            };
-        }
         let black_score: i64 = state
             .board
             .current_players_pieces(0)
             .iter()
-            .map(|&elt| MIDDLE_PROXIMITY.get(&elt).unwrap_or(&0))
+            .map(|&elt| location_maps::middle_proximity(elt))
             .sum();
 
         let white_score: i64 = state
             .board
             .current_players_pieces(1)
             .iter()
-            .map(|&elt| MIDDLE_PROXIMITY.get(&elt).unwrap_or(&0))
+            .map(|&elt| location_maps::middle_proximity(elt))
             .sum();
 
         unsigned100_normalize(
