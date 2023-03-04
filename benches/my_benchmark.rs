@@ -33,7 +33,7 @@ fn evaluate_tree_benchmark(c: &mut Criterion) {
     let tree = build_tree(&mut state, 2);
 
     c.bench_function("evaluate tree (depth: 2)", |b| {
-        b.iter(|| black_box(tree.clone().rollback(0)))
+        b.iter(|| black_box(tree.clone()).rollback(0))
     });
 }
 
