@@ -295,6 +295,70 @@ impl Heuristic for NumberDefendedEmptyHexes{
     }
 }
 
+
+#[derive(Clone)]
+struct ValueOfDefendedEmptyHexes;
+
+impl Heuristic for ValueOfDefendedEmptyHexes{
+
+    fn score(&self,state: &State) -> i64 {
+
+        let demonstration_location_system_map: HashMap<usize, i64> = HashMap::new(); 
+
+        let black_pieces = state
+        .board
+        .current_players_pieces(0);
+
+        let white_pieces = state
+            .board
+            .current_players_pieces(1);
+
+        let black_straight_hexes  = black_pieces
+            .iter()
+            .map(|&elt| state.board.get_straight_hex(0, elt));
+        
+        let black_score: i64 = black_straight_hexes.map(|elt| {
+            match elt {
+                Some(i) => {
+                    // let hex_taken = black_pieces.contains(i) || white_pieces.contains(i);
+                    // !hex_taken
+                    let straight_hole = state.board.board[*i];
+                    match straight_hole {
+                        Hole(Some(_)) => 0,
+                        Hole(None) => *demonstration_location_system_map.get(i).unwrap(),
+                    }
+                },
+                None => 0
+            }
+        }).sum();
+
+        let white_straight_hexes  = white_pieces
+            .iter()
+            .map(|&elt| state.board.get_straight_hex(1, elt));
+        
+        let white_score: i64 = white_straight_hexes.map(|elt| {
+            match elt {
+                Some(i) => {
+                    // let hex_taken = black_pieces.contains(i) || white_pieces.contains(i);
+                    // !hex_taken
+                    let straight_hole = state.board.board[*i];
+                    match straight_hole {
+                        Hole(Some(_)) => 0,
+                        Hole(None) => *demonstration_location_system_map.get(i).unwrap(),
+                    }
+                },
+                None => 0
+            }
+        }).sum();
+    
+        unsigned100_normalize(-10, 10, black_score-white_score)            
+    } 
+
+    fn name(&self) ->  &'static str {
+        "Value of Defended Empty Hexes"
+    }
+}
+
 fn unsigned100_normalize(min: i64, max: i64, value: i64) -> i64 {
     //  ((2 * (value - lb)) / (ub - lb)) - 1) * 100
     let numerator = 100 * 2 * (value - min);
