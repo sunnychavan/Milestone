@@ -18,7 +18,7 @@ use crate::game::{
     pieces::Piece::White,
 };
 
-use super::location_maps;
+use super::location_maps::{self, middle_proximity};
 
 #[enum_dispatch]
 #[derive(Clone)]
@@ -28,7 +28,9 @@ enum Heuristics {
     MiddleProximity,
     MiddlePieceDifferential,
     WinLose,
-    NumberDefendedEmptyHexes
+    NumberDefendedEmptyHexes,
+    ValueOfDefendedEmptyHexes,
+    NumberUndefendedPieces
 }
 
 #[enum_dispatch(Heuristics)]
@@ -260,9 +262,6 @@ struct ValueOfDefendedEmptyHexes;
 impl Heuristic for ValueOfDefendedEmptyHexes{
 
     fn score(&self,state: &State) -> i64 {
-
-        let demonstration_location_system_map: HashMap<usize, i64> = HashMap::new(); 
-
         let black_pieces = state
         .board
         .current_players_pieces(0);
@@ -283,7 +282,7 @@ impl Heuristic for ValueOfDefendedEmptyHexes{
                     let straight_hole = state.board.board[*i];
                     match straight_hole {
                         Hole(Some(_)) => 0,
-                        Hole(None) => *demonstration_location_system_map.get(i).unwrap(),
+                        Hole(None) => middle_proximity(*i),
                     }
                 },
                 None => 0
@@ -302,18 +301,120 @@ impl Heuristic for ValueOfDefendedEmptyHexes{
                     let straight_hole = state.board.board[*i];
                     match straight_hole {
                         Hole(Some(_)) => 0,
-                        Hole(None) => *demonstration_location_system_map.get(i).unwrap(),
+                        Hole(None) => middle_proximity(*i),
                     }
                 },
                 None => 0
             }
         }).sum();
-    
+        
         unsigned100_normalize(-10, 10, black_score-white_score)            
     } 
 
     fn name(&self) ->  &'static str {
         "Value of Defended Empty Hexes"
+    }
+}
+
+#[derive(Clone)]
+struct NumberUndefendedPieces;
+
+impl Heuristic for NumberUndefendedPieces{
+
+    fn score(&self,state: &State) -> i64 {
+        lazy_static! {
+            static ref INVALID_BLACK_DEFENDED_PIECES: HashSet<usize> = {
+                let mut invalid_black_defended_pieces = HashSet::new();
+                invalid_black_defended_pieces.insert(0);
+                invalid_black_defended_pieces.insert(1);
+                invalid_black_defended_pieces.insert(2);
+                invalid_black_defended_pieces.insert(3);
+                invalid_black_defended_pieces.insert(5);
+                invalid_black_defended_pieces.insert(6);
+                invalid_black_defended_pieces.insert(9);
+                invalid_black_defended_pieces
+            };
+        }
+
+        lazy_static! {
+            static ref INVALID_WHITE_DEFENDED_PIECES: HashSet<usize> = {
+                let mut invalid_white_defended_pieces = HashSet::new();
+                invalid_white_defended_pieces.insert(27);
+                invalid_white_defended_pieces.insert(30);
+                invalid_white_defended_pieces.insert(31);
+                invalid_white_defended_pieces.insert(33);
+                invalid_white_defended_pieces.insert(34);
+                invalid_white_defended_pieces.insert(35);
+                invalid_white_defended_pieces.insert(36);
+                invalid_white_defended_pieces
+            };
+        }
+
+
+        let black_pieces = state
+        .board
+        .current_players_pieces(0);
+
+        let num_valid_black_pieces = black_pieces.iter().filter(|&elt|{
+            !INVALID_BLACK_DEFENDED_PIECES.contains(elt)
+        }).count();
+
+        let white_pieces = state
+            .board
+            .current_players_pieces(1);
+        
+        let num_valid_white_pieces = white_pieces.iter().filter(|&elt|{
+            !INVALID_WHITE_DEFENDED_PIECES.contains(elt)
+        }).count();
+
+        let black_straight_hexes  = black_pieces
+            .iter()
+            .map(|&elt| state.board.get_straight_hex(0, elt));
+
+        
+        let black_defended_pieces = black_straight_hexes.filter(|&elt| {
+            match elt {
+                Some(i) => {
+                    let straight_hole = state.board.board[*i];
+                    match straight_hole {
+                        Hole(Some(Black)) => true,
+                        Hole(_) => false,
+                    }
+                },
+                None => false
+            }
+        }).count();
+
+        let black_undefended_pieces = num_valid_black_pieces - black_defended_pieces;
+
+
+        let white_straight_hexes  = white_pieces
+            .iter()
+            .map(|&elt| state.board.get_straight_hex(1, elt));
+        
+        let white_defended_pieces = white_straight_hexes.filter(|&elt| {
+            match elt {
+                Some(i) => {
+                    let straight_hole = state.board.board[*i];
+                    match straight_hole {
+                        Hole(Some(White)) => true,
+                        Hole(_) => false,
+                    }
+                },
+                None => false
+            }
+        }).count();
+
+        let white_undefended_pieces = num_valid_white_pieces - white_defended_pieces;
+
+        // // i64::try_from(white_undefended_pieces).unwrap()
+        // i64::try_from(black_undefended_pieces).unwrap()
+
+        unsigned100_normalize(-10, 10, i64::try_from(white_undefended_pieces).unwrap()-i64::try_from(black_undefended_pieces).unwrap())            
+    } 
+
+    fn name(&self) ->  &'static str {
+        "Number of Undefended Pieces"
     }
 }
 
@@ -336,8 +437,8 @@ fn upperbound_middle_proximity(
 
 #[derive(Clone)]
 pub struct HeuristicWeights {
-    functions: [Heuristics; 6],
-    weights: [i64; 6],
+    functions: [Heuristics; 8],
+    weights: [i64; 8],
 }
 
 impl Debug for HeuristicWeights {
@@ -347,7 +448,7 @@ impl Debug for HeuristicWeights {
 }
 
 impl HeuristicWeights {
-    pub fn new(weights: [i64; 6]) -> Self {
+    pub fn new(weights: [i64; 8]) -> Self {
         HeuristicWeights {
             functions: [
                 Heuristics::PieceDifferential(PieceDifferential),
@@ -356,6 +457,8 @@ impl HeuristicWeights {
                 Heuristics::MiddlePieceDifferential(MiddlePieceDifferential),
                 Heuristics::WinLose(WinLose),
                 Heuristics::NumberDefendedEmptyHexes(NumberDefendedEmptyHexes),
+                Heuristics::ValueOfDefendedEmptyHexes(ValueOfDefendedEmptyHexes),
+                Heuristics::NumberUndefendedPieces(NumberUndefendedPieces),
             ],
             weights,
         }
