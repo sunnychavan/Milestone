@@ -181,11 +181,9 @@ struct WinLose;
 impl Heuristic for WinLose {
     fn score(&self, state: &State) -> i64 {
         // don't need to normalize
-        let blacks_home = state.board.board[0];
-        let whites_home = state.board.board[36];
-        match (blacks_home, whites_home) {
-            (Hole(Some(White)), _) => -1000,
-            (_, Hole(Some(Black))) => 1000,
+        match state.winner {
+            Some(0) => 1000,
+            Some(1) => -1000,
             _ => 0,
         }
     }

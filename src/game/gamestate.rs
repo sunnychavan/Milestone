@@ -175,21 +175,15 @@ impl State {
         self.board.board[to] = Hole(Some(current_player_pieces));
 
         // if white just moved, and black now can't move, white wins
-        if self.current_turn == 0
-            && (self.board.current_players_pieces(0).is_empty()
-                || !self.has_a_possible_move(0))
-        {
-            self.active = false;
-            self.winner = Some(1);
-        }
-
         // if black just moved, and white now can't move, black wins
-        if self.current_turn == 1
-            && (self.board.current_players_pieces(1).is_empty()
-                || !self.has_a_possible_move(1))
+        if self
+            .board
+            .current_players_pieces(self.current_turn)
+            .is_empty()
+            || !self.has_a_possible_move(self.current_turn)
         {
             self.active = false;
-            self.winner = Some(0)
+            self.winner = Some(self.current_turn);
         }
 
         // check if game ends (via landing in home square)
@@ -203,6 +197,9 @@ impl State {
     }
 
     pub fn current_possible_moves(&self) -> Vec<Move> {
+        if !self.active {
+            return vec![];
+        }
         Board::all_valid_moves(&self.board, self.current_turn)
             .into_iter()
             .filter(|&m| {
