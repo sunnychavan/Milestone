@@ -105,17 +105,15 @@ impl State {
         &self,
         from: &usize,
         to: &usize,
+        turn: u8,
     ) -> Result<bool, &'static str> {
-        let current_player_pieces =
-            self.get_pieces_type_from_idx(self.current_turn);
+        let current_player_pieces = self.get_pieces_type_from_idx(turn);
 
-        let valid_start: bool = self
-            .board
-            .current_players_pieces(self.current_turn)
-            .contains(&from);
+        let valid_start: bool =
+            self.board.current_players_pieces(turn).contains(&from);
 
         if valid_start {
-            match self.board.possible_move(&from, &to, self.current_turn) {
+            match self.board.possible_move(&from, &to, turn) {
                 Some(m @ Move::Diagonal(_a, d))
                 | Some(m @ Move::Straight(_a, d)) => {
                     match self.board.board[d].0 {
@@ -147,7 +145,7 @@ impl State {
         let current_player_pieces =
             self.get_pieces_type_from_idx(self.current_turn);
 
-        match (self.can_move(&from, &to), capture) {
+        match (self.can_move(&from, &to, self.current_turn), capture) {
             (Ok(true), true) => {
                 self.move_piece_aux(from, to, current_player_pieces);
                 Ok(())
@@ -196,15 +194,15 @@ impl State {
         }
     }
 
-    pub fn current_possible_moves(&self) -> Vec<Move> {
+    pub fn current_possible_moves(&self, turn: u8) -> Vec<Move> {
         if !self.active {
             return vec![];
         }
-        Board::all_valid_moves(&self.board, self.current_turn)
+        Board::all_valid_moves(&self.board, turn)
             .into_iter()
             .filter(|&m| {
                 let (Diagonal(origin, dest) | Straight(origin, dest)) = m;
-                matches!(self.can_move(&origin, &dest), Ok(_))
+                matches!(self.can_move(&origin, &dest, turn), Ok(_))
             })
             .collect::<Vec<Move>>()
     }
@@ -238,7 +236,7 @@ impl State {
         for origin in self.board.current_players_pieces(turn).iter() {
             for mv in get_moves_of_piece(turn, origin).iter() {
                 let (Straight(origin, dest) | Diagonal(origin, dest)) = mv;
-                if self.can_move(origin, dest).is_ok() {
+                if self.can_move(origin, dest, turn).is_ok() {
                     return true;
                 }
             }

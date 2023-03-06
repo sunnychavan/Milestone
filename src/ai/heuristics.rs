@@ -11,11 +11,14 @@ use std::{
 use enum_dispatch::enum_dispatch;
 use lazy_static::lazy_static;
 
-use crate::game::{
-    board::{Hole, Move},
-    gamestate::State,
-    pieces::Piece::Black,
-    pieces::Piece::White,
+use crate::{
+    ai::location_maps::{black_proximity, white_proximity},
+    game::{
+        board::{Hole, Move},
+        gamestate::State,
+        pieces::Piece::Black,
+        pieces::Piece::White,
+    },
 };
 
 use super::location_maps;
@@ -30,6 +33,8 @@ enum Heuristics {
     WinLose,
     NumberDefendedEmptyHexes,
     ValueOfDefendedEmptyHexes,
+    AttackTiming,
+    LimitOppoMoves,
 }
 
 #[enum_dispatch(Heuristics)]
@@ -322,6 +327,86 @@ impl Heuristic for ValueOfDefendedEmptyHexes {
     }
 }
 
+#[derive(Clone)]
+struct AttackTiming;
+
+impl Heuristic for AttackTiming {
+    fn score(&self, state: &State) -> i64 {
+        lazy_static! {
+            static ref MIDDLE_PIECES: HashSet<usize> = {
+                let mut middle_pieces = HashSet::new();
+                middle_pieces.insert(0);
+                middle_pieces.insert(4);
+                middle_pieces.insert(11);
+                middle_pieces.insert(18);
+                middle_pieces.insert(25);
+                middle_pieces.insert(32);
+                middle_pieces.insert(36);
+
+                middle_pieces
+            };
+        }
+
+        let black_pieces = state.board.current_players_pieces(0);
+
+        let black_most_adv_mid_val = black_pieces
+            .clone()
+            .into_iter()
+            .filter(|hex| MIDDLE_PIECES.contains(hex))
+            .map(white_proximity)
+            .max();
+
+        let black_most_adv_side_val = black_pieces
+            .into_iter()
+            .filter(|hex| !MIDDLE_PIECES.contains(hex))
+            .map(white_proximity)
+            .max();
+
+        let black_diff = black_most_adv_mid_val.unwrap_or_default()
+            - black_most_adv_side_val.unwrap_or_default();
+
+        let white_pieces = state.board.current_players_pieces(1);
+
+        let white_most_adv_mid_val = white_pieces
+            .clone()
+            .into_iter()
+            .filter(|hex| MIDDLE_PIECES.contains(hex))
+            .map(black_proximity)
+            .max();
+
+        let white_most_adv_side_val = white_pieces
+            .into_iter()
+            .filter(|hex| !MIDDLE_PIECES.contains(hex))
+            .map(black_proximity)
+            .max();
+
+        let white_diff = white_most_adv_mid_val.unwrap_or_default()
+            - white_most_adv_side_val.unwrap_or_default();
+
+        unsigned100_normalize(-10, 10, white_diff - black_diff)
+    }
+
+    fn name(&self) -> &'static str {
+        "Attack in-sync"
+    }
+}
+
+#[derive(Clone)]
+struct LimitOppoMoves;
+
+impl Heuristic for LimitOppoMoves {
+    fn score(&self, state: &State) -> i64 {
+        let black_moves = state.current_possible_moves(0).len() as i64;
+        let white_moves = state.current_possible_moves(1).len() as i64;
+
+        unsigned100_normalize(-30, 30, black_moves - white_moves)
+    }
+
+    fn name(&self) -> &'static str {
+        "Limit Oppo Moves"
+    }
+}
+
 fn unsigned100_normalize(min: i64, max: i64, value: i64) -> i64 {
     //  ((2 * (value - lb)) / (ub - lb)) - 1) * 100
     let numerator = 1000 * 2 * (value - min);
@@ -341,8 +426,8 @@ fn upperbound_middle_proximity(
 
 #[derive(Clone)]
 pub struct HeuristicWeights {
-    functions: [Heuristics; 6],
-    weights: [i64; 6],
+    functions: [Heuristics; 8],
+    weights: [i64; 8],
 }
 
 impl Debug for HeuristicWeights {
@@ -352,7 +437,7 @@ impl Debug for HeuristicWeights {
 }
 
 impl HeuristicWeights {
-    pub fn new(weights: [i64; 6]) -> Self {
+    pub fn new(weights: [i64; 8]) -> Self {
         HeuristicWeights {
             functions: [
                 Heuristics::PieceDifferential(PieceDifferential),
@@ -361,6 +446,8 @@ impl HeuristicWeights {
                 Heuristics::MiddlePieceDifferential(MiddlePieceDifferential),
                 Heuristics::WinLose(WinLose),
                 Heuristics::NumberDefendedEmptyHexes(NumberDefendedEmptyHexes),
+                Heuristics::AttackTiming(AttackTiming),
+                Heuristics::LimitOppoMoves(LimitOppoMoves),
             ],
             weights,
         }

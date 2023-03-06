@@ -94,19 +94,29 @@ pub fn black_proximity(location: usize) -> i64 {
 
             black_proximity[1] = 4;
             black_proximity[2] = 4;
+            black_proximity[4] = 4;
 
             black_proximity[3] = 3;
-            black_proximity[4] = 3;
             black_proximity[5] = 3;
+            black_proximity[7] = 3;
+            black_proximity[8] = 3;
+            black_proximity[11] = 3;
 
             black_proximity[6] = 2;
-            black_proximity[7] = 2;
-            black_proximity[8] = 2;
             black_proximity[9] = 2;
+            black_proximity[10] = 2;
+            black_proximity[12] = 2;
+            black_proximity[14] = 2;
+            black_proximity[15] = 2;
+            black_proximity[18] = 2;
 
-            black_proximity[10] = 1;
-            black_proximity[11] = 1;
-            black_proximity[12] = 1;
+            black_proximity[13] = 1;
+            black_proximity[16] = 1;
+            black_proximity[17] = 1;
+            black_proximity[19] = 1;
+            black_proximity[21] = 1;
+            black_proximity[22] = 1;
+            black_proximity[25] = 1;
 
             black_proximity
         };
@@ -122,21 +132,31 @@ pub fn white_proximity(location: usize) -> i64 {
 
             white_proximity[36] = 5;
 
-            white_proximity[35] = 4;
+            white_proximity[32] = 4;
             white_proximity[34] = 4;
+            white_proximity[35] = 4;
 
-            white_proximity[33] = 3;
-            white_proximity[32] = 3;
+            white_proximity[25] = 3;
+            white_proximity[28] = 3;
+            white_proximity[29] = 3;
             white_proximity[31] = 3;
+            white_proximity[33] = 3;
 
-            white_proximity[30] = 2;
-            white_proximity[29] = 2;
-            white_proximity[28] = 2;
+            white_proximity[18] = 2;
+            white_proximity[21] = 2;
+            white_proximity[22] = 2;
+            white_proximity[24] = 2;
+            white_proximity[26] = 2;
             white_proximity[27] = 2;
+            white_proximity[30] = 2;
 
-            white_proximity[26] = 1;
-            white_proximity[25] = 1;
-            white_proximity[24] = 1;
+            white_proximity[11] = 1;
+            white_proximity[14] = 1;
+            white_proximity[15] = 1;
+            white_proximity[17] = 1;
+            white_proximity[19] = 1;
+            white_proximity[20] = 1;
+            white_proximity[23] = 1;
 
             white_proximity
         };
