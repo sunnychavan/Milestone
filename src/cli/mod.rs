@@ -83,29 +83,9 @@ pub fn play_game() {
 
     while game.active {
         game.play_one_turn();
-        // println!(
-        //     "Press (u) to undo the last move, \
-        //      (pX) to create an SVG of the recent game tree with depth X, \
-        //      and anything else to continue:"
-        // );
-        // let mut input = String::new();
-        // match io::stdin().read_line(&mut input) {
-        //     Ok(_) => match input.as_str().trim() {
-        //         "u" => {
-        //             // undo the previous move
-        //         }
-        //         "p" => {
-        //             // print the recent game tree
-        //         }
-        //         _ => {
-        //             // continue
-        //         }
-        //     },
-        //     Err(e) => {
-        //         println!("Oops. Something went wrong ({})", e);
-        //     }
-        // }
     }
+
+    println!("{game}");
 }
 
 pub fn get_name_from_user(label: &str) -> String {

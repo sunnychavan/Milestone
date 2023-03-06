@@ -467,23 +467,25 @@ impl Board {
             .collect::<Vec<Move>>()
     }
 
-    pub fn get_moves_of_piece(&self, turn: u8) -> &[Vec<Move>] {
-        match turn {
-            0 => &*BLACK_MOVES,
-            1 => &*WHITE_MOVES,
-            _ => panic!("Invalid Turn (must be zero or one"),
-        }
-    }
+    pub fn get_straight_hex(&self, turn: u8, index: usize) -> Option<&usize> {
+        let piece_moves = get_moves_of_piece(turn, &index);
 
-    pub fn get_straight_hex(&self, turn: u8, index: usize) -> Option<&usize>{
-        let piece_moves = self.get_moves_of_piece(turn);
+        // in the move hashmaps up above, the straight move is always last
+        let potential_straight_move = piece_moves.last();
 
-        // in the move hashmaps up above, the straight move is always last 
-        let potential_straight_move = piece_moves.get(index).unwrap().last() ;
-        
         match potential_straight_move {
             Some(Straight(_, dest)) => Some(dest),
             _ => None,
         }
     }
+}
+
+pub fn get_moves_of_piece(turn: u8, piece: &usize) -> &'static Vec<Move> {
+    let lookup = match turn {
+        0 => &*BLACK_MOVES,
+        1 => &*WHITE_MOVES,
+        _ => panic!("Invalid Turn (must be zero or one"),
+    };
+
+    &lookup[*piece]
 }

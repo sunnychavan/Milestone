@@ -1,6 +1,11 @@
 use super::{
-    board::Board, board::Hole, board::Move, board::Move::Diagonal,
-    board::Move::Straight, pieces::Piece, player::Player,
+    board::Board,
+    board::Hole,
+    board::Move,
+    board::Move::Diagonal,
+    board::{get_moves_of_piece, Move::Straight},
+    pieces::Piece,
+    player::Player,
     player::PossiblePlayer,
 };
 use std::fmt::{self};
@@ -32,6 +37,7 @@ impl GameBuilder {
     pub fn build(self) -> State {
         State {
             active: true,
+            winner: None,
             current_turn: 0,
             board: self.board.to_owned(),
             players: self.players,
@@ -42,6 +48,7 @@ impl GameBuilder {
 #[derive(Clone)]
 pub struct State {
     pub active: bool,
+    pub winner: Option<u8>,
     pub current_turn: u8,
     pub board: Board,
     pub players: [PossiblePlayer; 2],
@@ -96,8 +103,8 @@ impl State {
     //   and <_, E(str)> if it is an invalid move
     pub fn can_move(
         &self,
-        from: usize,
-        to: usize,
+        from: &usize,
+        to: &usize,
     ) -> Result<bool, &'static str> {
         let current_player_pieces =
             self.get_pieces_type_from_idx(self.current_turn);
@@ -140,7 +147,7 @@ impl State {
         let current_player_pieces =
             self.get_pieces_type_from_idx(self.current_turn);
 
-        match (self.can_move(from, to), capture) {
+        match (self.can_move(&from, &to), capture) {
             (Ok(true), true) => {
                 self.move_piece_aux(from, to, current_player_pieces);
                 Ok(())
@@ -167,9 +174,22 @@ impl State {
         self.board.board[from] = Hole(None);
         self.board.board[to] = Hole(Some(current_player_pieces));
 
-        // check if game ends
+        // if white just moved, and black now can't move, white wins
+        // if black just moved, and white now can't move, black wins
+        if self
+            .board
+            .current_players_pieces(self.current_turn)
+            .is_empty()
+            || !self.has_a_possible_move(self.current_turn)
+        {
+            self.active = false;
+            self.winner = Some(self.current_turn);
+        }
+
+        // check if game ends (via landing in home square)
         if to == 0 || to == 36 {
             self.active = false;
+            self.winner = Some(self.current_turn);
         } else {
             // one move per turn
             self.current_turn = 1 - self.current_turn;
@@ -177,11 +197,14 @@ impl State {
     }
 
     pub fn current_possible_moves(&self) -> Vec<Move> {
+        if !self.active {
+            return vec![];
+        }
         Board::all_valid_moves(&self.board, self.current_turn)
             .into_iter()
             .filter(|&m| {
                 let (Diagonal(origin, dest) | Straight(origin, dest)) = m;
-                matches!(self.can_move(origin, dest), Ok(_))
+                matches!(self.can_move(&origin, &dest), Ok(_))
             })
             .collect::<Vec<Move>>()
     }
@@ -209,5 +232,18 @@ impl State {
             self.players[self.current_turn as usize].to_owned();
 
         current_player.one_turn(self);
+    }
+
+    fn has_a_possible_move(&mut self, turn: u8) -> bool {
+        for origin in self.board.current_players_pieces(turn).iter() {
+            for mv in get_moves_of_piece(turn, origin).iter() {
+                let (Straight(origin, dest) | Diagonal(origin, dest)) = mv;
+                if self.can_move(origin, dest).is_ok() {
+                    return true;
+                }
+            }
+        }
+
+        false
     }
 }
