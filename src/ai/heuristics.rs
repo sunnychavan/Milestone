@@ -524,7 +524,7 @@ impl Heuristic for ValueUndefendedPieces{
 }
 
 
-fn unsigned100_normalize(min: i64, max: i64, value: i64) -> i64 {
+pub fn unsigned100_normalize(min: i64, max: i64, value: i64) -> i64 {
     //  ((2 * (value - lb)) / (ub - lb)) - 1) * 100
     let numerator = 1000 * 2 * (value - min);
     let denominator = max - min;
