@@ -38,6 +38,7 @@ enum Heuristics {
     AttackTiming,
     LimitOppoMoves,
     NumberOfStraightLines,
+    ValueOfStraightLines,
 }
 
 #[enum_dispatch(Heuristics)]
@@ -654,6 +655,60 @@ impl Heuristic for NumberOfStraightLines {
     }
 }
 
+#[derive(Clone)]
+struct ValueOfStraightLines;
+
+impl Heuristic for ValueOfStraightLines {
+    fn score(&self, state: &State) -> i64 {
+        let black_pieces = state.board.current_players_pieces(0);
+
+        let white_pieces = state.board.current_players_pieces(1);
+
+        let black_straight_hexes = black_pieces
+            .iter()
+            .map(|&elt| (elt, state.board.get_straight_hex(0, elt)));
+
+        let black_score: i64 = black_straight_hexes
+            .map(|(idx, elt)| match elt {
+                Some(i) => {
+                    let straight_hole = state.board.board[*i];
+                    match straight_hole {
+                        Hole(Some(Black)) => {
+                            location_maps::middle_proximity(&idx)
+                        }
+                        _ => 0,
+                    }
+                }
+                None => 0,
+            })
+            .sum();
+
+        let white_straight_hexes = white_pieces
+            .iter()
+            .map(|&elt| (elt, state.board.get_straight_hex(1, elt)));
+
+        let white_score: i64 = white_straight_hexes
+            .map(|(idx, elt)| match elt {
+                Some(i) => {
+                    let straight_hole = state.board.board[*i];
+                    match straight_hole {
+                        Hole(Some(White)) => {
+                            location_maps::middle_proximity(&idx)
+                        }
+                        _ => 0,
+                    }
+                }
+                None => 0,
+            })
+            .sum();
+        unsigned100_normalize(-42, 42, black_score - white_score)
+    }
+
+    fn name(&self) -> &'static str {
+        "Value of Straight Lines"
+    }
+}
+
 pub fn unsigned100_normalize(min: i64, max: i64, value: i64) -> i64 {
     //  ((2 * (value - lb)) / (ub - lb)) - 1) * 100
     let numerator = 1000 * 2 * (value - min);
@@ -673,8 +728,8 @@ fn upperbound_middle_proximity(
 
 #[derive(Clone)]
 pub struct HeuristicWeights {
-    functions: [Heuristics; 12],
-    weights: [i64; 12],
+    functions: [Heuristics; 13],
+    weights: [i64; 13],
 }
 
 impl Debug for HeuristicWeights {
@@ -684,7 +739,7 @@ impl Debug for HeuristicWeights {
 }
 
 impl HeuristicWeights {
-    pub fn new(weights: [i64; 12]) -> Self {
+    pub fn new(weights: [i64; 13]) -> Self {
         HeuristicWeights {
             functions: [
                 Heuristics::PieceDifferential(PieceDifferential),
@@ -701,6 +756,7 @@ impl HeuristicWeights {
                 Heuristics::AttackTiming(AttackTiming),
                 Heuristics::LimitOppoMoves(LimitOppoMoves),
                 Heuristics::NumberOfStraightLines(NumberOfStraightLines),
+                Heuristics::ValueOfStraightLines(ValueOfStraightLines),
             ],
             weights,
         }
