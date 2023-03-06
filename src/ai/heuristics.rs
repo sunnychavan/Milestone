@@ -262,10 +262,6 @@ impl Heuristic for NumberDefendedEmptyHexes {
 struct ValueOfDefendedEmptyHexes;
 
 impl Heuristic for ValueOfDefendedEmptyHexes {
-    fn score(&self, state: &State) -> i64 {
-        let demonstration_location_system_map: HashMap<usize, i64> =
-            HashMap::new();
-
     fn score(&self,state: &State) -> i64 {
         let black_pieces = state
         .board
@@ -288,7 +284,7 @@ impl Heuristic for ValueOfDefendedEmptyHexes {
                     match straight_hole {
                         Hole(Some(_)) => 0,
                         Hole(None) => middle_proximity(*i),
-                    }
+                    }}
                     None => 0,
                 }
             })
