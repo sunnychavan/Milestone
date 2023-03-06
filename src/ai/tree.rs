@@ -44,7 +44,7 @@ impl GameTree {
             tree_root_idx: tree.add_node(GameNode::new(0, base_state)),
             tree,
             max_depth,
-            weights: HeuristicWeights::new([1, 1, 1, 1, 1, 1, 1, 1, 1]),
+            weights: HeuristicWeights::new([1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1]),
         }
     }
 
@@ -84,7 +84,9 @@ impl GameTree {
             return;
         }
 
-        let possible_moves = root_node.state.current_possible_moves();
+        let possible_moves = root_node
+            .state
+            .current_possible_moves(root_node.state.current_turn);
         for m @ Straight(origin, dest) | m @ Diagonal(origin, dest) in
             possible_moves
         {
