@@ -4,6 +4,8 @@
 
 TODO:
 
+- For each heuristic utilizing location system, should have helper which calculates max possible value and min possible value to be used as arguments to
+  normalize function
 - AI will often defer winning in favor of making a different move (because at a
   given depth, it will still eventually win), putting it off for very long
   periods of time
