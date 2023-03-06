@@ -21,7 +21,7 @@ use crate::{
     },
 };
 
-use super::location_maps;
+use super::location_maps::{self, middle_proximity};
 
 #[enum_dispatch]
 #[derive(Clone)]
@@ -32,7 +32,7 @@ enum Heuristics {
     MiddlePieceDifferential,
     WinLose,
     NumberDefendedEmptyHexes,
-    ValueOfDefendedEmptyHexes,
+    MiddleProx_ValueOfDefendedEmptyHexes,
     AttackTiming,
     LimitOppoMoves,
 }
@@ -117,14 +117,14 @@ impl Heuristic for MiddleProximity {
             .board
             .current_players_pieces(0)
             .iter()
-            .map(|&elt| location_maps::middle_proximity(elt))
+            .map(location_maps::middle_proximity)
             .sum();
 
         let white_score: i64 = state
             .board
             .current_players_pieces(1)
             .iter()
-            .map(|&elt| location_maps::middle_proximity(elt))
+            .map(location_maps::middle_proximity)
             .sum();
 
         unsigned100_normalize(
@@ -262,13 +262,10 @@ impl Heuristic for NumberDefendedEmptyHexes {
 }
 
 #[derive(Clone)]
-struct ValueOfDefendedEmptyHexes;
+struct MiddleProx_ValueOfDefendedEmptyHexes;
 
-impl Heuristic for ValueOfDefendedEmptyHexes {
+impl Heuristic for MiddleProx_ValueOfDefendedEmptyHexes {
     fn score(&self, state: &State) -> i64 {
-        let demonstration_location_system_map: HashMap<usize, i64> =
-            HashMap::new();
-
         let black_pieces = state.board.current_players_pieces(0);
 
         let white_pieces = state.board.current_players_pieces(1);
@@ -286,9 +283,7 @@ impl Heuristic for ValueOfDefendedEmptyHexes {
                         let straight_hole = state.board.board[*i];
                         match straight_hole {
                             Hole(Some(_)) => 0,
-                            Hole(None) => *demonstration_location_system_map
-                                .get(i)
-                                .unwrap(),
+                            Hole(None) => middle_proximity(i),
                         }
                     }
                     None => 0,
@@ -309,9 +304,7 @@ impl Heuristic for ValueOfDefendedEmptyHexes {
                         let straight_hole = state.board.board[*i];
                         match straight_hole {
                             Hole(Some(_)) => 0,
-                            Hole(None) => *demonstration_location_system_map
-                                .get(i)
-                                .unwrap(),
+                            Hole(None) => middle_proximity(i),
                         }
                     }
                     None => 0,
@@ -323,7 +316,7 @@ impl Heuristic for ValueOfDefendedEmptyHexes {
     }
 
     fn name(&self) -> &'static str {
-        "Value of Defended Empty Hexes"
+        "Val Defended Empty (Mid Prox)"
     }
 }
 
@@ -350,14 +343,13 @@ impl Heuristic for AttackTiming {
         let black_pieces = state.board.current_players_pieces(0);
 
         let black_most_adv_mid_val = black_pieces
-            .clone()
-            .into_iter()
+            .iter()
             .filter(|hex| MIDDLE_PIECES.contains(hex))
             .map(white_proximity)
             .max();
 
         let black_most_adv_side_val = black_pieces
-            .into_iter()
+            .iter()
             .filter(|hex| !MIDDLE_PIECES.contains(hex))
             .map(white_proximity)
             .max();
@@ -368,14 +360,13 @@ impl Heuristic for AttackTiming {
         let white_pieces = state.board.current_players_pieces(1);
 
         let white_most_adv_mid_val = white_pieces
-            .clone()
-            .into_iter()
+            .iter()
             .filter(|hex| MIDDLE_PIECES.contains(hex))
             .map(black_proximity)
             .max();
 
         let white_most_adv_side_val = white_pieces
-            .into_iter()
+            .iter()
             .filter(|hex| !MIDDLE_PIECES.contains(hex))
             .map(black_proximity)
             .max();
