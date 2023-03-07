@@ -1,10 +1,10 @@
 use lazy_static::lazy_static;
 
-pub fn location_agnostic(location: usize) -> i64 {
-    location as i64
+pub fn location_agnostic(location: &usize) -> i64 {
+    *location as i64
 }
 
-pub fn centrality(location: usize) -> i64 {
+pub fn centrality(location: &usize) -> i64 {
     lazy_static! {
         static ref CENTRALITY: [i64; 37] = {
             let mut centrality_map = [0; 37];
@@ -35,14 +35,14 @@ pub fn centrality(location: usize) -> i64 {
         };
     }
 
-    CENTRALITY[location]
+    CENTRALITY[*location]
 }
 
-pub fn anti_centrality(location: usize) -> i64 {
+pub fn anti_centrality(location: &usize) -> i64 {
     3 - centrality(location)
 }
 
-pub fn middle_proximity(location: usize) -> i64 {
+pub fn middle_proximity(location: &usize) -> i64 {
     lazy_static! {
         static ref MIDDLE_PROXIMITY: [i64; 37] = {
             let mut middle_proximity: [i64; 37] = [0; 37];
@@ -82,10 +82,10 @@ pub fn middle_proximity(location: usize) -> i64 {
         };
     }
 
-    MIDDLE_PROXIMITY[location]
+    MIDDLE_PROXIMITY[*location]
 }
 
-pub fn black_proximity(location: usize) -> i64 {
+pub fn black_proximity(location: &usize) -> i64 {
     lazy_static! {
         static ref BLACK_PROXIMITY: [i64; 37] = {
             let mut black_proximity = [0; 37];
@@ -122,10 +122,10 @@ pub fn black_proximity(location: usize) -> i64 {
         };
     }
 
-    BLACK_PROXIMITY[location]
+    BLACK_PROXIMITY[*location]
 }
 
-pub fn white_proximity(location: usize) -> i64 {
+pub fn white_proximity(location: &usize) -> i64 {
     lazy_static! {
         static ref WHITE_PROXIMITY: [i64; 37] = {
             let mut white_proximity = [0; 37];
@@ -162,5 +162,5 @@ pub fn white_proximity(location: usize) -> i64 {
         };
     }
 
-    WHITE_PROXIMITY[location]
+    WHITE_PROXIMITY[*location]
 }

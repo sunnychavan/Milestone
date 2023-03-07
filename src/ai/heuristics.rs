@@ -119,14 +119,14 @@ impl Heuristic for MiddleProximity {
             .board
             .current_players_pieces(0)
             .iter()
-            .map(|&elt| location_maps::middle_proximity(elt))
+            .map(location_maps::middle_proximity)
             .sum();
 
         let white_score: i64 = state
             .board
             .current_players_pieces(1)
             .iter()
-            .map(|&elt| location_maps::middle_proximity(elt))
+            .map(location_maps::middle_proximity)
             .sum();
 
         unsigned100_normalize(
@@ -267,58 +267,50 @@ impl Heuristic for NumberDefendedEmptyHexes {
 struct ValueOfDefendedEmptyHexes;
 
 impl Heuristic for ValueOfDefendedEmptyHexes {
-    fn score(&self,state: &State) -> i64 {
-        let black_pieces = state
-        .board
-        .current_players_pieces(0);
+    fn score(&self, state: &State) -> i64 {
+        let black_pieces = state.board.current_players_pieces(0);
 
-        let white_pieces = state
-            .board
-            .current_players_pieces(1);
+        let white_pieces = state.board.current_players_pieces(1);
 
-        let black_straight_hexes  = black_pieces
+        let black_straight_hexes = black_pieces
             .iter()
             .map(|&elt| state.board.get_straight_hex(0, elt));
-        
-        let black_score: i64 = black_straight_hexes.map(|elt| {
-            match elt {
+
+        let black_score: i64 = black_straight_hexes
+            .map(|elt| match elt {
                 Some(i) => {
-                    // let hex_taken = black_pieces.contains(i) || white_pieces.contains(i);
-                    // !hex_taken
                     let straight_hole = state.board.board[*i];
                     match straight_hole {
                         Hole(Some(_)) => 0,
-                        Hole(None) => middle_proximity(*i),
-                    }}
-                    None => 0,
+                        Hole(None) => middle_proximity(i),
+                    }
                 }
+                None => 0,
             })
             .sum();
 
         let white_straight_hexes = white_pieces
             .iter()
             .map(|&elt| state.board.get_straight_hex(1, elt));
-        
-        let white_score: i64 = white_straight_hexes.map(|elt| {
-            match elt {
+
+        let white_score: i64 = white_straight_hexes
+            .map(|elt| match elt {
                 Some(i) => {
-                    // let hex_taken = black_pieces.contains(i) || white_pieces.contains(i);
-                    // !hex_taken
                     let straight_hole = state.board.board[*i];
                     match straight_hole {
                         Hole(Some(_)) => 0,
-                        Hole(None) => middle_proximity(*i),
+                        Hole(None) => middle_proximity(i),
                     }
-                },
-                None => 0
-            }
-        }).sum();
-        
-        unsigned100_normalize(-37, 37, black_score-white_score)            
-    } 
+                }
+                None => 0,
+            })
+            .sum();
+
+        unsigned100_normalize(-37, 37, black_score - white_score)
+    }
 
     fn name(&self) -> &'static str {
-        "Value of Defended Empty Hexes"
+        "Val Defended Empty (Mid Prox)"
     }
 }
 
@@ -345,14 +337,13 @@ impl Heuristic for AttackTiming {
         let black_pieces = state.board.current_players_pieces(0);
 
         let black_most_adv_mid_val = black_pieces
-            .clone()
-            .into_iter()
+            .iter()
             .filter(|hex| MIDDLE_PIECES.contains(hex))
             .map(white_proximity)
             .max();
 
         let black_most_adv_side_val = black_pieces
-            .into_iter()
+            .iter()
             .filter(|hex| !MIDDLE_PIECES.contains(hex))
             .map(white_proximity)
             .max();
@@ -363,14 +354,13 @@ impl Heuristic for AttackTiming {
         let white_pieces = state.board.current_players_pieces(1);
 
         let white_most_adv_mid_val = white_pieces
-            .clone()
-            .into_iter()
+            .iter()
             .filter(|hex| MIDDLE_PIECES.contains(hex))
             .map(black_proximity)
             .max();
 
         let white_most_adv_side_val = white_pieces
-            .into_iter()
+            .iter()
             .filter(|hex| !MIDDLE_PIECES.contains(hex))
             .map(black_proximity)
             .max();
@@ -405,9 +395,8 @@ impl Heuristic for LimitOppoMoves {
 #[derive(Clone)]
 struct NumberUndefendedPieces;
 
-impl Heuristic for NumberUndefendedPieces{
-
-    fn score(&self,state: &State) -> i64 {
+impl Heuristic for NumberUndefendedPieces {
+    fn score(&self, state: &State) -> i64 {
         lazy_static! {
             static ref INVALID_BLACK_DEFENDED_PIECES: HashSet<usize> = {
                 let mut invalid_black_defended_pieces = HashSet::new();
@@ -436,78 +425,78 @@ impl Heuristic for NumberUndefendedPieces{
             };
         }
 
+        let black_pieces = state.board.current_players_pieces(0);
 
-        let black_pieces = state
-        .board
-        .current_players_pieces(0);
+        let num_valid_black_pieces = black_pieces
+            .iter()
+            .filter(|&elt| !INVALID_BLACK_DEFENDED_PIECES.contains(elt))
+            .count();
 
-        let num_valid_black_pieces = black_pieces.iter().filter(|&elt|{
-            !INVALID_BLACK_DEFENDED_PIECES.contains(elt)
-        }).count();
+        let white_pieces = state.board.current_players_pieces(1);
 
-        let white_pieces = state
-            .board
-            .current_players_pieces(1);
-        
-        let num_valid_white_pieces = white_pieces.iter().filter(|&elt|{
-            !INVALID_WHITE_DEFENDED_PIECES.contains(elt)
-        }).count();
+        let num_valid_white_pieces = white_pieces
+            .iter()
+            .filter(|&elt| !INVALID_WHITE_DEFENDED_PIECES.contains(elt))
+            .count();
 
-        let black_straight_hexes  = black_pieces
+        let black_straight_hexes = black_pieces
             .iter()
             .map(|&elt| state.board.get_straight_hex(0, elt));
 
-        
-        let black_defended_pieces = black_straight_hexes.filter(|&elt| {
-            match elt {
+        let black_defended_pieces = black_straight_hexes
+            .filter(|&elt| match elt {
                 Some(i) => {
                     let straight_hole = state.board.board[*i];
                     match straight_hole {
                         Hole(Some(Black)) => true,
                         Hole(_) => false,
                     }
-                },
-                None => false
-            }
-        }).count();
+                }
+                None => false,
+            })
+            .count();
 
-        let black_undefended_pieces = num_valid_black_pieces - black_defended_pieces;
+        let black_undefended_pieces =
+            num_valid_black_pieces - black_defended_pieces;
 
-
-        let white_straight_hexes  = white_pieces
+        let white_straight_hexes = white_pieces
             .iter()
             .map(|&elt| state.board.get_straight_hex(1, elt));
-        
-        let white_defended_pieces = white_straight_hexes.filter(|&elt| {
-            match elt {
+
+        let white_defended_pieces = white_straight_hexes
+            .filter(|&elt| match elt {
                 Some(i) => {
                     let straight_hole = state.board.board[*i];
                     match straight_hole {
                         Hole(Some(White)) => true,
                         Hole(_) => false,
                     }
-                },
-                None => false
-            }
-        }).count();
+                }
+                None => false,
+            })
+            .count();
 
-        let white_undefended_pieces = num_valid_white_pieces - white_defended_pieces;
+        let white_undefended_pieces =
+            num_valid_white_pieces - white_defended_pieces;
 
-        unsigned100_normalize(-10, 10, i64::try_from(white_undefended_pieces).unwrap()-i64::try_from(black_undefended_pieces).unwrap())            
-    } 
+        unsigned100_normalize(
+            -10,
+            10,
+            i64::try_from(white_undefended_pieces).unwrap()
+                - i64::try_from(black_undefended_pieces).unwrap(),
+        )
+    }
 
-    fn name(&self) ->  &'static str {
+    fn name(&self) -> &'static str {
         "Number of Undefended Pieces"
     }
 }
 
-
 #[derive(Clone)]
 struct ValueUndefendedPieces;
 
-impl Heuristic for ValueUndefendedPieces{
-
-    fn score(&self,state: &State) -> i64 {
+impl Heuristic for ValueUndefendedPieces {
+    fn score(&self, state: &State) -> i64 {
         lazy_static! {
             static ref INVALID_BLACK_DEFENDED_PIECES: HashSet<usize> = {
                 let mut invalid_black_defended_pieces = HashSet::new();
@@ -536,78 +525,82 @@ impl Heuristic for ValueUndefendedPieces{
             };
         }
 
+        let black_pieces = state.board.current_players_pieces(0);
 
-        let black_pieces = state
-        .board
-        .current_players_pieces(0);
+        let white_pieces = state.board.current_players_pieces(1);
 
+        let black_straight_hexes = black_pieces
+            .iter()
+            .map(|&elt| state.board.get_straight_hex(0, elt));
 
-        let white_pieces = state
-        .board
-        .current_players_pieces(1);
-
-        
-        let black_straight_hexes  = black_pieces
-        .iter()
-        .map(|&elt| state.board.get_straight_hex(0, elt));
-
-        
-        let black_defended_pieces: HashSet<&usize>= black_straight_hexes.filter(|&elt| {
-            match elt {
+        let black_defended_pieces: HashSet<&usize> = black_straight_hexes
+            .filter(|&elt| match elt {
                 Some(i) => {
                     let straight_hole = state.board.board[*i];
                     match straight_hole {
                         Hole(Some(Black)) => true,
                         Hole(_) => false,
                     }
-                },
-                None => false
-            }
-        }).map({|elt| elt.unwrap()}).collect();
+                }
+                None => false,
+            })
+            .map({ |elt| elt.unwrap() })
+            .collect();
 
-        let value_black_undefended_pieces: i64 = black_pieces.iter().map(|&elt|{
-            if INVALID_BLACK_DEFENDED_PIECES.contains(&elt) || black_defended_pieces.contains(&elt) {
-                0
-            }
-            else{
-                middle_proximity(elt)
-            }
-        }).sum();
+        let value_black_undefended_pieces: i64 = black_pieces
+            .iter()
+            .map(|&elt| {
+                if INVALID_BLACK_DEFENDED_PIECES.contains(&elt)
+                    || black_defended_pieces.contains(&elt)
+                {
+                    0
+                } else {
+                    middle_proximity(&elt)
+                }
+            })
+            .sum();
 
-        let white_straight_hexes  = white_pieces
-        .iter()
-        .map(|&elt| state.board.get_straight_hex(1, elt));
+        let white_straight_hexes = white_pieces
+            .iter()
+            .map(|&elt| state.board.get_straight_hex(1, elt));
 
-        
-        let white_defended_pieces: HashSet<&usize>= white_straight_hexes.filter(|&elt| {
-            match elt {
+        let white_defended_pieces: HashSet<&usize> = white_straight_hexes
+            .filter(|&elt| match elt {
                 Some(i) => {
                     let straight_hole = state.board.board[*i];
                     match straight_hole {
                         Hole(Some(White)) => true,
                         Hole(_) => false,
                     }
-                },
-                None => false
-            }
-        }).map({|elt| elt.unwrap()}).collect();
+                }
+                None => false,
+            })
+            .map({ |elt| elt.unwrap() })
+            .collect();
 
-        let value_white_undefended_pieces:i64 = white_pieces.iter().map(|&elt|{
-            if INVALID_WHITE_DEFENDED_PIECES.contains(&elt) || white_defended_pieces.contains(&elt) {
-                0
-            }
-            else{
-                middle_proximity(elt)
-            }
-        }).sum();
-        unsigned100_normalize(-37, 37, value_white_undefended_pieces-value_black_undefended_pieces)            
-    } 
+        let value_white_undefended_pieces: i64 = white_pieces
+            .iter()
+            .map(|&elt| {
+                if INVALID_WHITE_DEFENDED_PIECES.contains(&elt)
+                    || white_defended_pieces.contains(&elt)
+                {
+                    0
+                } else {
+                    middle_proximity(&elt)
+                }
+            })
+            .sum();
+        unsigned100_normalize(
+            -37,
+            37,
+            value_white_undefended_pieces - value_black_undefended_pieces,
+        )
+    }
 
-    fn name(&self) ->  &'static str {
+    fn name(&self) -> &'static str {
         "Value of Undefended Pieces"
     }
 }
-
 
 pub fn unsigned100_normalize(min: i64, max: i64, value: i64) -> i64 {
     //  ((2 * (value - lb)) / (ub - lb)) - 1) * 100
@@ -648,7 +641,9 @@ impl HeuristicWeights {
                 Heuristics::MiddlePieceDifferential(MiddlePieceDifferential),
                 Heuristics::WinLose(WinLose),
                 Heuristics::NumberDefendedEmptyHexes(NumberDefendedEmptyHexes),
-                Heuristics::ValueOfDefendedEmptyHexes(ValueOfDefendedEmptyHexes),
+                Heuristics::ValueOfDefendedEmptyHexes(
+                    ValueOfDefendedEmptyHexes,
+                ),
                 Heuristics::NumberUndefendedPieces(NumberUndefendedPieces),
                 Heuristics::ValueUndefendedPieces(ValueUndefendedPieces),
                 Heuristics::AttackTiming(AttackTiming),
