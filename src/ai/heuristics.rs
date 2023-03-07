@@ -544,7 +544,7 @@ impl Heuristic for ValueUndefendedPieces {
                 }
                 None => false,
             })
-            .map({ |elt| elt.unwrap() })
+            .map(|elt| elt.unwrap())
             .collect();
 
         let value_black_undefended_pieces: i64 = black_pieces
@@ -575,7 +575,7 @@ impl Heuristic for ValueUndefendedPieces {
                 }
                 None => false,
             })
-            .map({ |elt| elt.unwrap() })
+            .map(|elt| elt.unwrap())
             .collect();
 
         let value_white_undefended_pieces: i64 = white_pieces
