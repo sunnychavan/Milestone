@@ -238,8 +238,6 @@ impl Heuristic for NumberDefendedEmptyHexes {
             .filter(|&elt| {
                 match elt {
                     Some(i) => {
-                        // let hex_taken = black_pieces.contains(i) || white_pieces.contains(i);
-                        // !hex_taken
                         let straight_hole = state.board.board[*i];
                         match straight_hole {
                             Hole(Some(_)) => false,
