@@ -37,6 +37,9 @@ enum Heuristics {
     ValueUndefendedPieces,
     AttackTiming,
     LimitOppoMoves,
+    NumberOfStraightLines,
+    ValueOfStraightLines,
+    NumberOfPassedPieces,
 }
 
 #[enum_dispatch(Heuristics)]
@@ -235,17 +238,15 @@ impl Heuristic for NumberDefendedEmptyHexes {
             .map(|&elt| state.board.get_straight_hex(1, elt));
 
         let white_score = white_straight_hexes
-            .filter(|&elt| {
-                match elt {
-                    Some(i) => {
-                        let straight_hole = state.board.board[*i];
-                        match straight_hole {
-                            Hole(Some(_)) => false,
-                            Hole(None) => true,
-                        }
+            .filter(|&elt| match elt {
+                Some(i) => {
+                    let straight_hole = state.board.board[*i];
+                    match straight_hole {
+                        Hole(Some(_)) => false,
+                        Hole(None) => true,
                     }
-                    None => false,
                 }
+                None => false,
             })
             .count();
         unsigned100_normalize(
@@ -600,6 +601,163 @@ impl Heuristic for ValueUndefendedPieces {
     }
 }
 
+#[derive(Clone)]
+struct NumberOfStraightLines;
+
+impl Heuristic for NumberOfStraightLines {
+    fn score(&self, state: &State) -> i64 {
+        let black_pieces = state.board.current_players_pieces(0);
+
+        let white_pieces = state.board.current_players_pieces(1);
+
+        let black_straight_hexes = black_pieces
+            .iter()
+            .map(|&elt| state.board.get_straight_hex(0, elt));
+
+        let black_score = black_straight_hexes
+            .filter(|&elt| match elt {
+                Some(i) => {
+                    let straight_hole = state.board.board[*i];
+                    matches!(straight_hole, Hole(Some(Black)))
+                    // matches! macro equivalent to:
+                    // match straight_hole {
+                    //     Hole(Some(Black)) => true,
+                    //     _ => false,
+                    // }
+                }
+                None => false,
+            })
+            .count();
+
+        let white_straight_hexes = white_pieces
+            .iter()
+            .map(|&elt| state.board.get_straight_hex(1, elt));
+
+        let white_score = white_straight_hexes
+            .filter(|&elt| match elt {
+                Some(i) => {
+                    let straight_hole = state.board.board[*i];
+                    matches!(straight_hole, Hole(Some(White)))
+                }
+                None => false,
+            })
+            .count();
+        unsigned100_normalize(
+            -8,
+            8,
+            i64::try_from(black_score).unwrap()
+                - i64::try_from(white_score).unwrap(),
+        )
+        // potentially use an iterative DFS to avoid double counting?
+    }
+
+    fn name(&self) -> &'static str {
+        "Number of Straight Lines"
+    }
+}
+
+#[derive(Clone)]
+struct ValueOfStraightLines;
+
+impl Heuristic for ValueOfStraightLines {
+    fn score(&self, state: &State) -> i64 {
+        let black_pieces = state.board.current_players_pieces(0);
+
+        let white_pieces = state.board.current_players_pieces(1);
+
+        let black_straight_hexes = black_pieces
+            .iter()
+            .map(|&elt| (elt, state.board.get_straight_hex(0, elt)));
+
+        let black_score: i64 = black_straight_hexes
+            .map(|(idx, elt)| match elt {
+                Some(i) => {
+                    let straight_hole = state.board.board[*i];
+                    match straight_hole {
+                        Hole(Some(Black)) => {
+                            location_maps::middle_proximity(&idx)
+                        }
+                        _ => 0,
+                    }
+                }
+                None => 0,
+            })
+            .sum();
+
+        let white_straight_hexes = white_pieces
+            .iter()
+            .map(|&elt| (elt, state.board.get_straight_hex(1, elt)));
+
+        let white_score: i64 = white_straight_hexes
+            .map(|(idx, elt)| match elt {
+                Some(i) => {
+                    let straight_hole = state.board.board[*i];
+                    match straight_hole {
+                        Hole(Some(White)) => {
+                            location_maps::middle_proximity(&idx)
+                        }
+                        _ => 0,
+                    }
+                }
+                None => 0,
+            })
+            .sum();
+        unsigned100_normalize(-42, 42, black_score - white_score)
+    }
+
+    fn name(&self) -> &'static str {
+        "Value of Straight Lines"
+    }
+}
+
+#[derive(Clone)]
+struct NumberOfPassedPieces;
+
+impl Heuristic for NumberOfPassedPieces {
+    fn score(&self, state: &State) -> i64 {
+        let black_pieces = state.board.current_players_pieces(0);
+
+        let white_pieces = state.board.current_players_pieces(1);
+
+        let black_furthest = black_pieces
+            .iter()
+            .map(|&elt| location_maps::black_proximity_row(elt))
+            .max()
+            .unwrap();
+
+        let white_furthest = white_pieces
+            .iter()
+            .map(|&elt| location_maps::white_proximity_row(elt))
+            .max()
+            .unwrap();
+
+        let black_score = black_pieces
+            .iter()
+            .filter(|&elt| {
+                location_maps::black_proximity_row(*elt) >= 12 - white_furthest
+            })
+            .count();
+
+        let white_score = white_pieces
+            .iter()
+            .filter(|&elt| {
+                location_maps::white_proximity_row(*elt) >= 12 - black_furthest
+            })
+            .count();
+
+        unsigned100_normalize(
+            -10,
+            10,
+            i64::try_from(white_score).unwrap()
+                - i64::try_from(black_score).unwrap(),
+        )
+    }
+
+    fn name(&self) -> &'static str {
+        "Number of Passed Pieces"
+    }
+}
+
 pub fn unsigned100_normalize(min: i64, max: i64, value: i64) -> i64 {
     //  ((2 * (value - lb)) / (ub - lb)) - 1) * 100
     let numerator = 1000 * 2 * (value - min);
@@ -619,8 +777,8 @@ fn upperbound_middle_proximity(
 
 #[derive(Clone)]
 pub struct HeuristicWeights {
-    functions: [Heuristics; 11],
-    weights: [i64; 11],
+    functions: [Heuristics; 14],
+    weights: [i64; 14],
 }
 
 impl Debug for HeuristicWeights {
@@ -630,7 +788,7 @@ impl Debug for HeuristicWeights {
 }
 
 impl HeuristicWeights {
-    pub fn new(weights: [i64; 11]) -> Self {
+    pub fn new(weights: [i64; 14]) -> Self {
         HeuristicWeights {
             functions: [
                 Heuristics::PieceDifferential(PieceDifferential),
@@ -646,6 +804,9 @@ impl HeuristicWeights {
                 Heuristics::ValueUndefendedPieces(ValueUndefendedPieces),
                 Heuristics::AttackTiming(AttackTiming),
                 Heuristics::LimitOppoMoves(LimitOppoMoves),
+                Heuristics::NumberOfStraightLines(NumberOfStraightLines),
+                Heuristics::ValueOfStraightLines(ValueOfStraightLines),
+                Heuristics::NumberOfPassedPieces(NumberOfPassedPieces),
             ],
             weights,
         }
