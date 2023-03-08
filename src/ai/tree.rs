@@ -45,7 +45,7 @@ impl GameTree {
             tree,
             max_depth,
             weights: HeuristicWeights::new([
-                1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+                1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
             ]),
         }
     }

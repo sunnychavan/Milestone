@@ -39,6 +39,7 @@ enum Heuristics {
     LimitOppoMoves,
     NumberOfStraightLines,
     ValueOfStraightLines,
+    NumberOfPassedPieces,
 }
 
 #[enum_dispatch(Heuristics)]
@@ -709,6 +710,54 @@ impl Heuristic for ValueOfStraightLines {
     }
 }
 
+#[derive(Clone)]
+struct NumberOfPassedPieces;
+
+impl Heuristic for NumberOfPassedPieces {
+    fn score(&self, state: &State) -> i64 {
+        let black_pieces = state.board.current_players_pieces(0);
+
+        let white_pieces = state.board.current_players_pieces(1);
+
+        let black_furthest = black_pieces
+            .iter()
+            .map(|&elt| location_maps::black_proximity_row(elt))
+            .max()
+            .unwrap();
+
+        let white_furthest = white_pieces
+            .iter()
+            .map(|&elt| location_maps::white_proximity_row(elt))
+            .max()
+            .unwrap();
+
+        let black_score = black_pieces
+            .iter()
+            .filter(|&elt| {
+                location_maps::black_proximity_row(*elt) >= 12 - white_furthest
+            })
+            .count();
+
+        let white_score = white_pieces
+            .iter()
+            .filter(|&elt| {
+                location_maps::white_proximity_row(*elt) >= 12 - black_furthest
+            })
+            .count();
+
+        unsigned100_normalize(
+            -10,
+            10,
+            i64::try_from(white_score).unwrap()
+                - i64::try_from(black_score).unwrap(),
+        )
+    }
+
+    fn name(&self) -> &'static str {
+        "Number of Passed Pieces"
+    }
+}
+
 pub fn unsigned100_normalize(min: i64, max: i64, value: i64) -> i64 {
     //  ((2 * (value - lb)) / (ub - lb)) - 1) * 100
     let numerator = 1000 * 2 * (value - min);
@@ -728,8 +777,8 @@ fn upperbound_middle_proximity(
 
 #[derive(Clone)]
 pub struct HeuristicWeights {
-    functions: [Heuristics; 13],
-    weights: [i64; 13],
+    functions: [Heuristics; 14],
+    weights: [i64; 14],
 }
 
 impl Debug for HeuristicWeights {
@@ -739,7 +788,7 @@ impl Debug for HeuristicWeights {
 }
 
 impl HeuristicWeights {
-    pub fn new(weights: [i64; 13]) -> Self {
+    pub fn new(weights: [i64; 14]) -> Self {
         HeuristicWeights {
             functions: [
                 Heuristics::PieceDifferential(PieceDifferential),
@@ -757,6 +806,7 @@ impl HeuristicWeights {
                 Heuristics::LimitOppoMoves(LimitOppoMoves),
                 Heuristics::NumberOfStraightLines(NumberOfStraightLines),
                 Heuristics::ValueOfStraightLines(ValueOfStraightLines),
+                Heuristics::NumberOfPassedPieces(NumberOfPassedPieces),
             ],
             weights,
         }
