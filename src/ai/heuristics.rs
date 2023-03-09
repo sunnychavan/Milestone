@@ -347,8 +347,9 @@ impl Heuristic for AttackTiming {
             .map(white_proximity)
             .max();
 
-        let black_diff = black_most_adv_mid_val.unwrap_or_default()
-            - black_most_adv_side_val.unwrap_or_default();
+        let black_diff = (black_most_adv_mid_val.unwrap_or_default()
+            - black_most_adv_side_val.unwrap_or_default())
+        .abs();
 
         let white_pieces = state.board.current_players_pieces(1);
 
@@ -364,8 +365,9 @@ impl Heuristic for AttackTiming {
             .map(black_proximity)
             .max();
 
-        let white_diff = white_most_adv_mid_val.unwrap_or_default()
-            - white_most_adv_side_val.unwrap_or_default();
+        let white_diff = (white_most_adv_mid_val.unwrap_or_default()
+            - white_most_adv_side_val.unwrap_or_default())
+        .abs();
 
         unsigned100_normalize(-10, 10, white_diff - black_diff)
     }
