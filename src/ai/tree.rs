@@ -38,7 +38,10 @@ pub struct GameNode {
 
 impl GameTree {
     pub fn new(base_state: State, max_depth: u8) -> GameTree {
-        let mut tree = DiGraph::<GameNode, Move>::new();
+        let mut tree = DiGraph::<GameNode, Move>::with_capacity(
+            usize::pow(12, max_depth.into()),
+            usize::pow(12, max_depth.into()),
+        );
 
         GameTree {
             tree_root_idx: tree.add_node(GameNode::new(0, base_state)),
@@ -99,31 +102,34 @@ impl GameTree {
                 .tree
                 .add_node(GameNode::new(root_node.depth + 1, new_state));
             self.tree.add_edge(root, new_node, m);
-
-            self.add_all_possible_children(new_node);
         }
     }
 
     fn max_value(
-        &self,
+        &mut self,
         root_idx: NodeIndex,
         mut alpha: i64,
         beta: i64,
-    ) -> (i64, Option<&Move>) {
-        let mut outgoing_moves = self.tree.edges(root_idx).peekable();
+    ) -> (i64, Option<Move>) {
+        self.add_all_possible_children(root_idx);
+
         // this node is a leaf node / at max-depth:
-        if outgoing_moves.peek().is_none() {
+        if self.tree.edges(root_idx).peekable().peek().is_none() {
             let root_node = self.tree.index(root_idx);
             (root_node.evaluate(self), None)
         } else {
             // to maximize this node, minimize its children
             let mut best_score: i64 = i64::MIN;
-            let mut best_move: Option<&Move> = None;
+            let mut best_move: Option<Move> = None;
 
-            for edge in outgoing_moves {
-                let d = edge.target();
-                let new_score = self.min_value(d, alpha, beta).0;
-                let new_move = Some(edge.weight());
+            let outgoing_edges: Vec<(NodeIndex, Move)> = self
+                .tree
+                .edges(root_idx)
+                .map(|e| (e.target(), *e.weight()))
+                .collect();
+            for (dest, mv) in outgoing_edges {
+                let new_score = self.min_value(dest, alpha, beta).0;
+                let new_move = Some(mv);
 
                 if new_score > best_score {
                     best_score = new_score;
@@ -142,25 +148,30 @@ impl GameTree {
     }
 
     fn min_value(
-        &self,
+        &mut self,
         root_idx: NodeIndex,
         alpha: i64,
         mut beta: i64,
-    ) -> (i64, Option<&Move>) {
-        let mut outgoing_moves = self.tree.edges(root_idx).peekable();
+    ) -> (i64, Option<Move>) {
+        self.add_all_possible_children(root_idx);
+
         // this node is a leaf node / at max-depth:
-        if outgoing_moves.peek().is_none() {
+        if self.tree.edges(root_idx).peekable().peek().is_none() {
             let root_node = self.tree.index(root_idx);
             (root_node.evaluate(self), None)
         } else {
             // to minimize this node, maximize its children
             let mut best_score: i64 = i64::MAX;
-            let mut best_move: Option<&Move> = None;
+            let mut best_move: Option<Move> = None;
 
-            for edge in outgoing_moves {
-                let d = edge.target();
-                let new_score = self.max_value(d, alpha, beta).0;
-                let new_move = Some(edge.weight());
+            let outgoing_edges: Vec<(NodeIndex, Move)> = self
+                .tree
+                .edges(root_idx)
+                .map(|e| (e.target(), *e.weight()))
+                .collect();
+            for (dest, mv) in outgoing_edges {
+                let new_score = self.max_value(dest, alpha, beta).0;
+                let new_move = Some(mv);
 
                 if new_score < best_score {
                     best_score = new_score;
