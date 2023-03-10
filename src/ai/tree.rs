@@ -38,7 +38,10 @@ pub struct GameNode {
 
 impl GameTree {
     pub fn new(base_state: State, max_depth: u8) -> GameTree {
-        let mut tree = DiGraph::<GameNode, Move>::new();
+        let mut tree = DiGraph::<GameNode, Move>::with_capacity(
+            usize::pow(12, max_depth.into()),
+            usize::pow(12, max_depth.into()),
+        );
 
         GameTree {
             tree_root_idx: tree.add_node(GameNode::new(0, base_state)),
