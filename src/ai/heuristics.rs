@@ -42,6 +42,8 @@ enum Heuristics {
     NumberOfPassedPieces,
 }
 
+pub const NUM_HEURISTICS: usize = 14;
+
 #[enum_dispatch(Heuristics)]
 trait Heuristic {
     fn score(&self, state: &State) -> i64;
@@ -779,9 +781,11 @@ fn upperbound_middle_proximity(
 
 #[derive(Clone)]
 pub struct HeuristicWeights {
-    functions: [Heuristics; 14],
-    weights: [i64; 14],
+    functions: [Heuristics; NUM_HEURISTICS],
+    weights: Weights,
 }
+
+pub type Weights = [i64; NUM_HEURISTICS];
 
 impl Debug for HeuristicWeights {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
@@ -790,7 +794,7 @@ impl Debug for HeuristicWeights {
 }
 
 impl HeuristicWeights {
-    pub fn new(weights: [i64; 14]) -> Self {
+    pub fn new(weights: Weights) -> Self {
         HeuristicWeights {
             functions: [
                 Heuristics::PieceDifferential(PieceDifferential),

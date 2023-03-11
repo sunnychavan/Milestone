@@ -1,3 +1,5 @@
+use crate::ai::heuristics::NUM_HEURISTICS;
+use crate::ai::tree::SearchLimit;
 use crate::game::gamestate::{GameBuilder, State};
 
 use crate::game::player::PossiblePlayer;
@@ -25,14 +27,16 @@ pub fn choose_type_of_game() -> State {
                     gb.set_player_1(PossiblePlayer::Person(Person::new(
                         player_name,
                     )))
-                    .set_player_2(PossiblePlayer::AI(AI::new("AI".to_string())))
+                    .set_player_2(PossiblePlayer::AI(AI::from_name(
+                        "AI".to_string(),
+                    )))
                     .build()
                 }
                 "2" => {
                     // game as white
                     let player_name = get_name_from_user("yourself");
 
-                    gb.set_player_1(PossiblePlayer::AI(AI::new(
+                    gb.set_player_1(PossiblePlayer::AI(AI::from_name(
                         "AI".to_string(),
                     )))
                     .set_player_2(PossiblePlayer::Person(Person::new(
@@ -54,12 +58,17 @@ pub fn choose_type_of_game() -> State {
                     .build()
                 }
                 "0" => {
+                    let depth = get_depth_from_user();
                     // game between two AI
                     gb.set_player_1(PossiblePlayer::AI(AI::new(
                         "AI 1".to_string(),
+                        [1; NUM_HEURISTICS],
+                        SearchLimit::Depth(depth),
                     )))
                     .set_player_2(PossiblePlayer::AI(AI::new(
                         "AI 2".to_string(),
+                        [1; NUM_HEURISTICS],
+                        SearchLimit::Depth(depth),
                     )))
                     .build()
                 }
@@ -97,6 +106,25 @@ pub fn get_name_from_user(label: &str) -> String {
         Err(e) => {
             println!("Oops. Something went wrong ({e}), please try again");
             get_name_from_user(label)
+        }
+    }
+}
+
+pub fn get_depth_from_user() -> u8 {
+    println!("Please input a max depth for the two AI:");
+
+    let mut input = String::new();
+    match io::stdin().read_line(&mut input) {
+        Ok(_) => match input.trim().parse::<u8>() {
+            Ok(i) => i,
+            _ => {
+                println!("Sorry, couldn't convert that to a valid depth, please try again");
+                get_depth_from_user()
+            }
+        },
+        Err(e) => {
+            println!("Oops. Something went wrong ({e}), please try again");
+            get_depth_from_user()
         }
     }
 }

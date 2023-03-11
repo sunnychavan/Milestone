@@ -21,6 +21,7 @@ use crate::game::board::Move;
 use super::super::game::board::Move::{Diagonal, Straight};
 use super::super::game::gamestate::State;
 use super::heuristics::HeuristicWeights;
+use super::heuristics::Weights;
 
 #[derive(Debug, Clone)]
 pub struct GameTree {
@@ -37,7 +38,11 @@ pub struct GameNode {
 }
 
 impl GameTree {
-    pub fn new(base_state: State, max_depth: u8) -> GameTree {
+    pub fn new(
+        base_state: State,
+        max_depth: u8,
+        weights: &Weights,
+    ) -> GameTree {
         let mut tree = DiGraph::<GameNode, Move>::with_capacity(
             usize::pow(12, max_depth.into()),
             usize::pow(12, max_depth.into()),
@@ -47,9 +52,7 @@ impl GameTree {
             tree_root_idx: tree.add_node(GameNode::new(0, base_state)),
             tree,
             max_depth,
-            weights: HeuristicWeights::new([
-                1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
-            ]),
+            weights: HeuristicWeights::new(weights.to_owned()),
         }
     }
 
@@ -231,7 +234,23 @@ fn create_svg_from_file(dot_file: &str, svg_file: File) {
         .expect("failed to launch dot process");
 }
 
-pub fn get_best_move(state: &State, time_limit: Duration) -> SuggestedMove {
+#[derive(Debug, Clone, PartialEq)]
+pub enum SearchLimit {
+    Time(Duration),
+    Depth(u8),
+}
+
+impl Default for SearchLimit {
+    fn default() -> Self {
+        SearchLimit::Time(Duration::from_millis(700))
+    }
+}
+
+pub fn iterative_deepening(
+    state: &State,
+    time_limit: &Duration,
+    weights: &Weights,
+) -> SuggestedMove {
     let function_beginning = Instant::now();
     let mut depth_to_search = 0;
     let mut best_move_opt: Option<Move> = None;
@@ -239,11 +258,12 @@ pub fn get_best_move(state: &State, time_limit: Duration) -> SuggestedMove {
     let mut time_building = Duration::ZERO;
     let mut time_evaluating = Duration::ZERO;
 
-    while Instant::now().duration_since(function_beginning) < time_limit {
+    while Instant::now().duration_since(function_beginning) < *time_limit {
         depth_to_search += 1;
 
         let before_building_tree = Instant::now();
-        let mut tree = GameTree::new(state.to_owned(), depth_to_search);
+        let mut tree =
+            GameTree::new(state.to_owned(), depth_to_search, weights);
         tree.build_eval_tree();
         let after_building_tree = Instant::now();
         let (m @ Move::Diagonal(_, _) | m @ Move::Straight(_, _)) =
@@ -270,6 +290,40 @@ pub fn get_best_move(state: &State, time_limit: Duration) -> SuggestedMove {
         heuristical_reasoning: best_tree
             .weights
             .new_with_state_and_move(state.clone(), best_move),
+    }
+}
+
+pub fn get_best_move(
+    state: &State,
+    limit: &SearchLimit,
+    weights: &Weights,
+) -> SuggestedMove {
+    match limit {
+        SearchLimit::Time(time_limit) => {
+            iterative_deepening(state, time_limit, weights)
+        }
+        SearchLimit::Depth(max_depth) => {
+            let before_building_tree = Instant::now();
+            let mut tree = GameTree::new(state.to_owned(), *max_depth, weights);
+            tree.build_eval_tree();
+            let after_building_tree = Instant::now();
+            let (m @ Move::Diagonal(_, _) | m @ Move::Straight(_, _)) =
+                tree.rollback(state.current_turn as usize);
+            let after_evaluating_tree = Instant::now();
+
+            SuggestedMove {
+                suggestion: m,
+                max_depth_considered: max_depth.to_owned(),
+                time_building_trees: after_building_tree
+                    .duration_since(before_building_tree),
+                time_evaluating_trees: after_evaluating_tree
+                    .duration_since(after_building_tree),
+                total_nodes_considered: tree.total_subnodes(),
+                heuristical_reasoning: tree
+                    .weights
+                    .new_with_state_and_move(state.clone(), m),
+            }
+        }
     }
 }
 
