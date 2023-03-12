@@ -140,7 +140,7 @@ impl GameTree {
                         let new_score = self.min_value(dest, alpha, beta).0;
                         let new_move = Some(mv);
 
-                        if new_score > best_score {
+                        if new_score >= best_score {
                             best_score = new_score;
                             best_move = new_move;
                             self.tree[root_idx].best_child_node =
@@ -185,11 +185,12 @@ impl GameTree {
                         .edges(root_idx)
                         .map(|e| (e.target(), *e.weight()))
                         .collect();
+                    // println!("DEBUG (MIN): {:?}", outgoing_edges);
                     for (dest, mv) in outgoing_edges {
                         let new_score = self.max_value(dest, alpha, beta).0;
                         let new_move = Some(mv);
 
-                        if new_score < best_score {
+                        if new_score <= best_score {
                             best_score = new_score;
                             best_move = new_move;
                             self.tree[root_idx].best_child_node =
@@ -352,6 +353,12 @@ pub fn get_best_move(
             tree.build_eval_tree();
             let after_building_tree = Instant::now();
             let moves = tree.rollback(state.current_turn as usize);
+            if moves.is_empty() {
+                println!(
+                    "DEBUG: {:?}",
+                    state.current_possible_moves(state.current_turn)
+                );
+            }
             let m = moves
                 .first()
                 .expect("Rollback did not return a potential move")
