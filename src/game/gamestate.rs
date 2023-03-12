@@ -177,9 +177,9 @@ impl State {
         // TODO: not considering the players turns correctly
         if self
             .board
-            .current_players_pieces(self.current_turn)
+            .current_players_pieces(1 - self.current_turn)
             .is_empty()
-            || !self.has_a_possible_move(self.current_turn)
+            || !self.has_a_possible_move(1 - self.current_turn)
         {
             self.active = false;
             self.winner = Some(self.current_turn);

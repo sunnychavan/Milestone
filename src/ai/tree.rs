@@ -1,5 +1,6 @@
 use petgraph::dot::Dot;
 use petgraph::graph::DiGraph;
+use petgraph::graph::EdgeIndex;
 use petgraph::graph::NodeIndex;
 use petgraph::visit::EdgeRef;
 use separator::Separatable;
@@ -9,6 +10,7 @@ use std::fs::File;
 use std::io::Write;
 use std::process::Command;
 use std::process::Stdio;
+use std::thread::current;
 use std::time::Instant;
 
 use std::iter::Iterator;
@@ -35,6 +37,7 @@ pub struct GameTree {
 pub struct GameNode {
     state: State,
     depth: u8,
+    best_child_node: Option<(NodeIndex, Move)>,
 }
 
 impl GameTree {
@@ -121,32 +124,39 @@ impl GameTree {
             let root_node = self.tree.index(root_idx);
             (root_node.evaluate(self), None)
         } else {
-            // to maximize this node, minimize its children
-            let mut best_score: i64 = i64::MIN;
-            let mut best_move: Option<Move> = None;
+            match self.tree[root_idx].best_child_node {
+                Some((n, _)) => self.min_value(n, alpha, beta),
+                None => {
+                    // to maximize this node, minimize its children
+                    let mut best_score: i64 = i64::MIN;
+                    let mut best_move: Option<Move> = None;
 
-            let outgoing_edges: Vec<(NodeIndex, Move)> = self
-                .tree
-                .edges(root_idx)
-                .map(|e| (e.target(), *e.weight()))
-                .collect();
-            for (dest, mv) in outgoing_edges {
-                let new_score = self.min_value(dest, alpha, beta).0;
-                let new_move = Some(mv);
+                    let outgoing_edges: Vec<(NodeIndex, Move)> = self
+                        .tree
+                        .edges(root_idx)
+                        .map(|e| (e.target(), *e.weight()))
+                        .collect();
+                    for (dest, mv) in outgoing_edges {
+                        let new_score = self.min_value(dest, alpha, beta).0;
+                        let new_move = Some(mv);
 
-                if new_score > best_score {
-                    best_score = new_score;
-                    best_move = new_move;
-                }
+                        if new_score > best_score {
+                            best_score = new_score;
+                            best_move = new_move;
+                            self.tree[root_idx].best_child_node =
+                                Some((dest, mv));
+                        }
 
-                // alpha / beta
-                alpha = std::cmp::max(best_score, alpha);
-                if alpha >= beta {
-                    break;
+                        // alpha / beta
+                        alpha = std::cmp::max(best_score, alpha);
+                        if alpha >= beta {
+                            break;
+                        }
+                    }
+
+                    (best_score, best_move)
                 }
             }
-
-            (best_score, best_move)
         }
     }
 
@@ -163,47 +173,72 @@ impl GameTree {
             let root_node = self.tree.index(root_idx);
             (root_node.evaluate(self), None)
         } else {
-            // to minimize this node, maximize its children
-            let mut best_score: i64 = i64::MAX;
-            let mut best_move: Option<Move> = None;
+            match self.tree[root_idx].best_child_node {
+                Some((n, _)) => self.max_value(n, alpha, beta),
+                None => {
+                    // to minimize this node, maximize its children
+                    let mut best_score: i64 = i64::MAX;
+                    let mut best_move: Option<Move> = None;
 
-            let outgoing_edges: Vec<(NodeIndex, Move)> = self
-                .tree
-                .edges(root_idx)
-                .map(|e| (e.target(), *e.weight()))
-                .collect();
-            for (dest, mv) in outgoing_edges {
-                let new_score = self.max_value(dest, alpha, beta).0;
-                let new_move = Some(mv);
+                    let outgoing_edges: Vec<(NodeIndex, Move)> = self
+                        .tree
+                        .edges(root_idx)
+                        .map(|e| (e.target(), *e.weight()))
+                        .collect();
+                    for (dest, mv) in outgoing_edges {
+                        let new_score = self.max_value(dest, alpha, beta).0;
+                        let new_move = Some(mv);
 
-                if new_score < best_score {
-                    best_score = new_score;
-                    best_move = new_move;
-                }
+                        if new_score < best_score {
+                            best_score = new_score;
+                            best_move = new_move;
+                            self.tree[root_idx].best_child_node =
+                                Some((dest, mv));
+                        }
 
-                // alpha / beta
-                beta = std::cmp::min(best_score, beta);
-                if alpha >= beta {
-                    break;
+                        // alpha / beta
+                        beta = std::cmp::min(best_score, beta);
+                        if alpha >= beta {
+                            break;
+                        }
+                    }
+
+                    (best_score, best_move)
                 }
             }
-
-            (best_score, best_move)
         }
     }
 
-    pub fn rollback(&mut self, player_idx: usize) -> Move {
+    pub fn rollback(&mut self, player_idx: usize) -> Vec<Move> {
         match player_idx {
-            0 => self
-                .max_value(self.tree_root_idx, i64::MIN, i64::MAX)
-                .1
-                .expect("the best value didn't have an associated move")
-                .to_owned(),
-            1 => self
-                .min_value(self.tree_root_idx, i64::MIN, i64::MAX)
-                .1
-                .expect("the best value didn't have an associated move")
-                .to_owned(),
+            0 => {
+                self.max_value(self.tree_root_idx, i64::MIN, i64::MAX);
+
+                let mut expected_moves = vec![];
+                let mut current_node_idx = self.tree_root_idx;
+                while let Some((child_idx, mv)) =
+                    self.tree[current_node_idx].best_child_node
+                {
+                    expected_moves.push(mv);
+                    current_node_idx = child_idx;
+                }
+
+                expected_moves
+            }
+            1 => {
+                self.min_value(self.tree_root_idx, i64::MIN, i64::MAX);
+
+                let mut expected_moves = vec![];
+                let mut current_node_idx = self.tree_root_idx;
+                while let Some((child_idx, mv)) =
+                    self.tree[current_node_idx].best_child_node
+                {
+                    expected_moves.push(mv);
+                    current_node_idx = child_idx;
+                }
+
+                expected_moves
+            }
             _ => panic!(
                 "player index must be confined. this is a two person game"
             ),
@@ -217,7 +252,11 @@ impl GameTree {
 
 impl GameNode {
     pub fn new(depth: u8, state: State) -> GameNode {
-        GameNode { depth, state }
+        GameNode {
+            depth,
+            state,
+            best_child_node: None,
+        }
     }
 
     fn evaluate(&self, tree: &GameTree) -> i64 {
@@ -257,6 +296,7 @@ pub fn iterative_deepening(
     let mut best_tree_opt: Option<GameTree> = None;
     let mut time_building = Duration::ZERO;
     let mut time_evaluating = Duration::ZERO;
+    let mut best_moves: Vec<Move> = vec![];
 
     while Instant::now().duration_since(function_beginning) < *time_limit {
         depth_to_search += 1;
@@ -266,8 +306,11 @@ pub fn iterative_deepening(
             GameTree::new(state.to_owned(), depth_to_search, weights);
         tree.build_eval_tree();
         let after_building_tree = Instant::now();
-        let (m @ Move::Diagonal(_, _) | m @ Move::Straight(_, _)) =
-            tree.rollback(state.current_turn as usize);
+        best_moves = tree.rollback(state.current_turn as usize);
+        let m = best_moves
+            .first()
+            .expect("Rollback did not return a potential move")
+            .to_owned();
         let after_evaluating_tree = Instant::now();
 
         best_move_opt = Some(m);
@@ -289,7 +332,8 @@ pub fn iterative_deepening(
         total_nodes_considered: best_tree.total_subnodes(),
         heuristical_reasoning: best_tree
             .weights
-            .new_with_state_and_move(state.clone(), best_move),
+            .new_with_state_and_moves(state.clone(), &best_moves),
+        expected_line: best_moves,
     }
 }
 
@@ -307,8 +351,11 @@ pub fn get_best_move(
             let mut tree = GameTree::new(state.to_owned(), *max_depth, weights);
             tree.build_eval_tree();
             let after_building_tree = Instant::now();
-            let (m @ Move::Diagonal(_, _) | m @ Move::Straight(_, _)) =
-                tree.rollback(state.current_turn as usize);
+            let moves = tree.rollback(state.current_turn as usize);
+            let m = moves
+                .first()
+                .expect("Rollback did not return a potential move")
+                .to_owned();
             let after_evaluating_tree = Instant::now();
 
             SuggestedMove {
@@ -319,9 +366,10 @@ pub fn get_best_move(
                 time_evaluating_trees: after_evaluating_tree
                     .duration_since(after_building_tree),
                 total_nodes_considered: tree.total_subnodes(),
-                heuristical_reasoning: tree
-                    .weights
-                    .new_with_state_and_move(state.clone(), m),
+                heuristical_reasoning: {
+                    tree.weights.new_with_state_and_moves(state.clone(), &moves)
+                },
+                expected_line: moves,
             }
         }
     }
@@ -334,12 +382,13 @@ pub struct SuggestedMove {
     time_evaluating_trees: Duration,
     total_nodes_considered: usize,
     heuristical_reasoning: HeuristicWeightsWithTwoStates,
+    expected_line: Vec<Move>,
 }
 
 impl Debug for SuggestedMove {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         f.write_fmt(format_args!(
-            "AI suggested {:?} ({} nodes considered, depth of {}) in {:.2} seconds ({:.2} to build, {:.2} to evaluate) with reasoning: {:#?}",
+            "AI suggested {:?} ({} nodes considered, depth of {}) in {:.2} seconds ({:.2} to build, {:.2} to evaluate) with reasoning: {:#?}. Expected the sequence: {:?}",
             self.suggestion,
             self.total_nodes_considered.separated_string(),
             self.max_depth_considered,
@@ -348,6 +397,7 @@ impl Debug for SuggestedMove {
             self.time_building_trees.as_secs_f32(),
             self.time_evaluating_trees.as_secs_f32(),
             self.heuristical_reasoning,
+            self.expected_line
         ))
     }
 }
