@@ -270,7 +270,7 @@ impl fmt::Debug for Board {
     }
 }
 
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, PartialEq)]
 pub struct Hole(pub Option<Piece>);
 
 impl fmt::Debug for Hole {
