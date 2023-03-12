@@ -1,13 +1,13 @@
+use crate::ai::heuristics::{Weights, NUM_HEURISTICS};
+use crate::ai::tree::SearchLimit;
 use crate::game::board::Move;
 
-use crate::ai::tree::{get_best_move};
+use crate::ai::tree::get_best_move;
 
 use super::gamestate::State;
 use core::fmt::Debug;
 
-
 use std::io;
-use std::time::{Duration};
 
 #[derive(Debug, Clone, Default, PartialEq)]
 pub struct Person {
@@ -68,11 +68,25 @@ fn handle_move_input(
 #[derive(Debug, Clone, Default, PartialEq)]
 pub struct AI {
     name: String,
+    weights: Weights,
+    limit: SearchLimit,
 }
 
 impl AI {
-    pub fn new(name: String) -> AI {
-        AI { name }
+    pub fn from_name(name: String) -> AI {
+        AI {
+            name,
+            weights: [1; NUM_HEURISTICS],
+            limit: SearchLimit::default(),
+        }
+    }
+
+    pub fn new(name: String, weights: Weights, limit: SearchLimit) -> AI {
+        AI {
+            name,
+            weights,
+            limit,
+        }
     }
 }
 
@@ -82,7 +96,7 @@ impl Player for AI {
     }
 
     fn one_turn(&self, state: &mut State) {
-        let sugg_move = get_best_move(state, Duration::from_millis(700));
+        let sugg_move = get_best_move(state, &self.limit, &self.weights);
 
         let (Move::Diagonal(origin, dest) | Move::Straight(origin, dest)) =
             sugg_move.suggestion;

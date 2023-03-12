@@ -1,7 +1,7 @@
 use criterion::{black_box, criterion_group, criterion_main, Criterion};
 use milestone::{
     self,
-    ai::tree::GameTree,
+    ai::{heuristics::NUM_HEURISTICS, tree::GameTree},
     game::{
         gamestate::{GameBuilder, State},
         player::{PossiblePlayer, AI},
@@ -10,13 +10,13 @@ use milestone::{
 
 fn create_game_env() -> milestone::game::gamestate::State {
     GameBuilder::new()
-        .set_player_1(PossiblePlayer::AI(AI::new("P1".to_string())))
-        .set_player_2(PossiblePlayer::AI(AI::new("P2".to_string())))
+        .set_player_1(PossiblePlayer::AI(AI::from_name("P1".to_string())))
+        .set_player_2(PossiblePlayer::AI(AI::from_name("P2".to_string())))
         .build()
 }
 
 fn build_tree(state: &mut State, depth: u8) -> GameTree {
-    let mut tree = GameTree::new(state.to_owned(), depth);
+    let mut tree = GameTree::new(state.to_owned(), depth, &[1; NUM_HEURISTICS]);
     tree.build_eval_tree();
     tree
 }

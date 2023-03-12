@@ -110,10 +110,10 @@ impl State {
         let current_player_pieces = self.get_pieces_type_from_idx(turn);
 
         let valid_start: bool =
-            self.board.current_players_pieces(turn).contains(&from);
+            self.board.current_players_pieces(turn).contains(from);
 
         if valid_start {
-            match self.board.possible_move(&from, &to, turn) {
+            match self.board.possible_move(from, to, turn) {
                 Some(m @ Move::Diagonal(_a, d))
                 | Some(m @ Move::Straight(_a, d)) => {
                     match self.board.board[d].0 {
@@ -174,11 +174,12 @@ impl State {
 
         // if white just moved, and black now can't move, white wins
         // if black just moved, and white now can't move, black wins
+        // TODO: not considering the players turns correctly
         if self
             .board
-            .current_players_pieces(self.current_turn)
+            .current_players_pieces(1 - self.current_turn)
             .is_empty()
-            || !self.has_a_possible_move(self.current_turn)
+            || !self.has_a_possible_move(1 - self.current_turn)
         {
             self.active = false;
             self.winner = Some(self.current_turn);
