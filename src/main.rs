@@ -4,5 +4,5 @@ pub mod game;
 
 #[allow(dead_code)]
 fn main() {
-    cli::play_game();
+    cli::choose_phase();
 }

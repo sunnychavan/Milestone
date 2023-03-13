@@ -111,9 +111,9 @@ impl GameTree {
     fn max_value(
         &mut self,
         root_idx: NodeIndex,
-        mut alpha: i64,
-        beta: i64,
-    ) -> (i64, Option<Move>) {
+        mut alpha: f64,
+        beta: f64,
+    ) -> (f64, Option<Move>) {
         self.add_all_possible_children(root_idx);
 
         // this node is a leaf node / at max-depth:
@@ -125,7 +125,7 @@ impl GameTree {
                 Some((n, _)) => self.min_value(n, alpha, beta),
                 None => {
                     // to maximize this node, minimize its children
-                    let mut best_score: i64 = i64::MIN;
+                    let mut best_score = f64::MIN;
                     let mut best_move: Option<Move> = None;
 
                     let outgoing_edges: Vec<(NodeIndex, Move)> = self
@@ -145,7 +145,7 @@ impl GameTree {
                         }
 
                         // alpha / beta
-                        alpha = std::cmp::max(best_score, alpha);
+                        alpha = f64::max(best_score, alpha);
                         if alpha >= beta {
                             break;
                         }
@@ -160,9 +160,9 @@ impl GameTree {
     fn min_value(
         &mut self,
         root_idx: NodeIndex,
-        alpha: i64,
-        mut beta: i64,
-    ) -> (i64, Option<Move>) {
+        alpha: f64,
+        mut beta: f64,
+    ) -> (f64, Option<Move>) {
         self.add_all_possible_children(root_idx);
 
         // this node is a leaf node / at max-depth:
@@ -174,7 +174,7 @@ impl GameTree {
                 Some((n, _)) => self.max_value(n, alpha, beta),
                 None => {
                     // to minimize this node, maximize its children
-                    let mut best_score: i64 = i64::MAX;
+                    let mut best_score = f64::MAX;
                     let mut best_move: Option<Move> = None;
 
                     let outgoing_edges: Vec<(NodeIndex, Move)> = self
@@ -195,7 +195,7 @@ impl GameTree {
                         }
 
                         // alpha / beta
-                        beta = std::cmp::min(best_score, beta);
+                        beta = f64::min(best_score, beta);
                         if alpha >= beta {
                             break;
                         }
@@ -210,7 +210,7 @@ impl GameTree {
     pub fn rollback(&mut self, player_idx: usize) -> Vec<Move> {
         match player_idx {
             0 => {
-                self.max_value(self.tree_root_idx, i64::MIN, i64::MAX);
+                self.max_value(self.tree_root_idx, f64::MIN, f64::MAX);
 
                 let mut expected_moves = vec![];
                 let mut current_node_idx = self.tree_root_idx;
@@ -224,7 +224,7 @@ impl GameTree {
                 expected_moves
             }
             1 => {
-                self.min_value(self.tree_root_idx, i64::MIN, i64::MAX);
+                self.min_value(self.tree_root_idx, f64::MIN, f64::MAX);
 
                 let mut expected_moves = vec![];
                 let mut current_node_idx = self.tree_root_idx;
@@ -257,7 +257,7 @@ impl GameNode {
         }
     }
 
-    fn evaluate(&self, tree: &GameTree) -> i64 {
+    fn evaluate(&self, tree: &GameTree) -> f64 {
         tree.weights.score(&self.state)
     }
 }
