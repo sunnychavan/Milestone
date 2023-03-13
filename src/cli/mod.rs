@@ -11,7 +11,8 @@ pub fn choose_type_of_game() -> State {
     println!(
         "Enter:\n\t(1) to play a game as black vs the AI,\
                \n\t(2) to play a game as white vs the AI,\
-               \n\t(3) to play against another human, or\
+               \n\t(3) to play against another human,\
+               \n\t(4) to load from a string, or\
                \n\t(0) to have two AIs play each other"
     );
 
@@ -56,6 +57,21 @@ pub fn choose_type_of_game() -> State {
                         player_2_name,
                     )))
                     .build()
+                }
+                "4" => {
+                    println!("Paste string below:");
+                    let mut input = String::new();
+                    match io::stdin().read_line(&mut input) {
+                        Ok(_) => State::from_repr_string(input.trim())
+                            .unwrap_or_else(|_| {
+                                println!("This string wasn't parseable. Please try again");
+                                choose_type_of_game()
+                            }),
+                        Err(e) => {
+                            println!("Oops. Something went wrong ({e}), please try again");
+                            choose_type_of_game()
+                        }
+                    }
                 }
                 "0" => {
                     let depth = get_depth_from_user();

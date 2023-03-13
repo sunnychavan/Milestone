@@ -478,6 +478,54 @@ impl Board {
             _ => None,
         }
     }
+
+    #[allow(clippy::result_unit_err)]
+    pub fn from_repr_string(s: &str) -> Result<Board, ()> {
+        let mut pieces: [Hole; 37] = [Hole(None); 37];
+        let mut idx = 0;
+        for char in s.chars() {
+            match char {
+                'b' => {
+                    pieces[idx] = Hole(Some(Piece::Black));
+                    idx += 1;
+                }
+                'w' => {
+                    pieces[idx] = Hole(Some(Piece::White));
+                    idx += 1;
+                }
+                '/' => (),
+                x => match x.to_digit(10) {
+                    Some(i) => idx += i as usize,
+                    None => return Err(()),
+                },
+            }
+        }
+        Ok(Board { board: pieces })
+    }
+
+    pub fn to_repr_string(&self) -> String {
+        let mut result = "".to_string();
+        for (idx, &h) in self.board.iter().enumerate() {
+            match h {
+                Hole(Some(Piece::Black)) => result.push('b'),
+                Hole(Some(Piece::White)) => result.push('w'),
+                Hole(None) => match result.chars().last() {
+                    Some('b') | Some('w') | Some('/') | None => {
+                        result.push('1')
+                    }
+                    Some(i) => result.replace_range(
+                        result.len() - 1..result.len(),
+                        &(i.to_digit(10).unwrap() + 1).to_string(),
+                    ),
+                },
+            };
+
+            if vec![0, 2, 5, 9, 12, 16, 19, 23, 26, 30, 33, 35].contains(&idx) {
+                result.push('/');
+            }
+        }
+        result
+    }
 }
 
 pub fn get_moves_of_piece(turn: u8, piece: &usize) -> &'static Vec<Move> {
