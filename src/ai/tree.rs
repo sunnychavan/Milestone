@@ -353,12 +353,6 @@ pub fn get_best_move(
             tree.build_eval_tree();
             let after_building_tree = Instant::now();
             let moves = tree.rollback(state.current_turn as usize);
-            if moves.is_empty() {
-                println!(
-                    "DEBUG: {:?}",
-                    state.current_possible_moves(state.current_turn)
-                );
-            }
             let m = moves
                 .first()
                 .expect("Rollback did not return a potential move")

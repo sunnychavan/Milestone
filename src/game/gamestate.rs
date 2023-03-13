@@ -72,6 +72,7 @@ impl fmt::Debug for State {
 
         fmt_struct.field("board", &self.board);
         fmt_struct.field("players", &self.players);
+        fmt_struct.field("string repr", &self.to_repr_string());
 
         fmt_struct.finish()
     }
@@ -92,6 +93,7 @@ impl fmt::Display for State {
         );
 
         fmt_struct.field("board", &self.board);
+        fmt_struct.field("string repr", &self.to_repr_string());
 
         fmt_struct.finish()
     }
@@ -243,5 +245,55 @@ impl State {
         }
 
         false
+    }
+
+    #[allow(clippy::result_unit_err)]
+    pub fn from_repr_string(s: &str) -> Result<State, ()> {
+        match s.get(0..=1) {
+            Some("b:") => {
+                let b = match s.get(2..) {
+                    Some(s) => Board::from_repr_string(s),
+                    None => return Err(()),
+                };
+                Ok(State {
+                    active: true,
+                    winner: None,
+                    current_turn: 0,
+                    players: [
+                        PossiblePlayer::default(),
+                        PossiblePlayer::default(),
+                    ],
+                    board: b?,
+                })
+            }
+            Some("w:") => {
+                let b = match s.get(2..) {
+                    Some(s) => Board::from_repr_string(s),
+                    None => return Err(()),
+                };
+                Ok(State {
+                    active: true,
+                    winner: None,
+                    current_turn: 1,
+                    players: [
+                        PossiblePlayer::default(),
+                        PossiblePlayer::default(),
+                    ],
+                    board: b?,
+                })
+            }
+            _ => panic!("Error, this string is not formatted correctly"),
+        }
+    }
+
+    pub fn to_repr_string(&self) -> String {
+        if !self.active {
+            return "".to_string();
+        }
+        match self.current_turn {
+            0 => "b:".to_owned() + &self.board.to_repr_string(),
+            1 => "w:".to_owned() + &self.board.to_repr_string(),
+            _ => panic!("Impossible current turn"),
+        }
     }
 }
