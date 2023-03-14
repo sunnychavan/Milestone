@@ -65,11 +65,21 @@ fn handle_move_input(
     }
 }
 
-#[derive(Debug, Clone, Default, PartialEq)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct AI {
     name: String,
     weights: Weights,
     limit: SearchLimit,
+}
+
+impl Default for AI {
+    fn default() -> Self {
+        AI {
+            name: String::default(),
+            weights: [1; NUM_HEURISTICS],
+            limit: SearchLimit::default(),
+        }
+    }
 }
 
 impl AI {
