@@ -7,6 +7,7 @@ use super::{
     pieces::Piece,
     player::Player,
     player::PossiblePlayer,
+    player::AI,
 };
 use std::fmt::{self};
 
@@ -260,8 +261,8 @@ impl State {
                     winner: None,
                     current_turn: 0,
                     players: [
-                        PossiblePlayer::default(),
-                        PossiblePlayer::default(),
+                        PossiblePlayer::AI(AI::default()),
+                        PossiblePlayer::AI(AI::default()),
                     ],
                     board: b?,
                 })
@@ -276,13 +277,13 @@ impl State {
                     winner: None,
                     current_turn: 1,
                     players: [
-                        PossiblePlayer::default(),
-                        PossiblePlayer::default(),
+                        PossiblePlayer::AI(AI::default()),
+                        PossiblePlayer::AI(AI::default()),
                     ],
                     board: b?,
                 })
             }
-            _ => panic!("Error, this string is not formatted correctly"),
+            _ => Err(()),
         }
     }
 

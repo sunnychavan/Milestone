@@ -46,10 +46,7 @@ impl GameTree {
         max_depth: u8,
         weights: &Weights,
     ) -> GameTree {
-        let mut tree = DiGraph::<GameNode, Move>::with_capacity(
-            usize::pow(12, max_depth.into()),
-            usize::pow(12, max_depth.into()),
-        );
+        let mut tree = DiGraph::<GameNode, Move>::new();
 
         GameTree {
             tree_root_idx: tree.add_node(GameNode::new(0, base_state)),
@@ -295,11 +292,13 @@ pub fn iterative_deepening(
     let mut depth_to_search = 0;
     let mut best_move_opt: Option<Move> = None;
     let mut best_tree_opt: Option<GameTree> = None;
+    let mut best_moves: Vec<Move> = vec![];
     let mut time_building = Duration::ZERO;
     let mut time_evaluating = Duration::ZERO;
-    let mut best_moves: Vec<Move> = vec![];
 
-    while Instant::now().duration_since(function_beginning) < *time_limit {
+    while Instant::now().duration_since(function_beginning) < *time_limit
+        && depth_to_search < 100
+    {
         depth_to_search += 1;
 
         let before_building_tree = Instant::now();
