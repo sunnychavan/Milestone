@@ -1,6 +1,8 @@
 //! all heuristics are oriented to provide high scores when black is in a good
 //! situation, and low (negative) scores for white advantaged positions
 
+#![allow(non_camel_case_types)]
+
 use std::{
     collections::{HashMap, HashSet},
     fmt::Debug,
@@ -11,38 +13,43 @@ use std::{
 use enum_dispatch::enum_dispatch;
 use lazy_static::lazy_static;
 
-use crate::{
-    ai::location_maps::{black_proximity, white_proximity},
-    game::{
-        board::{Hole, Move},
-        gamestate::State,
-        pieces::Piece::Black,
-        pieces::Piece::White,
-    },
+use crate::game::{
+    board::{Hole, Move},
+    gamestate::State,
+    pieces::Piece::Black,
+    pieces::Piece::White,
 };
 
-use super::location_maps::{self, middle_proximity};
+use super::location_maps::{
+    anti_centrality, black_proximity, black_proximity_row, centrality,
+    middle_proximity, white_proximity, white_proximity_row,
+};
 
 #[enum_dispatch]
 #[derive(Clone)]
 enum Heuristics {
     PieceDifferential,
-    HoldImportantPieces,
+    MiddleLineDifferential,
+    ImportantPieces,
     MiddleProximity,
-    MiddlePieceDifferential,
-    WinLose,
-    NumberDefendedEmptyHexes,
-    ValueOfDefendedEmptyHexes,
-    NumberUndefendedPieces,
-    ValueUndefendedPieces,
+    AggressionDifferential,
+    PassivenessDifferential,
+    Centrality,
+    AntiCentrality,
+    DefendedHexes,
+    DefendedHexes_MiddleProximity,
+    UndefendedPieces,
+    UndefendedPieces_MiddleProximity,
     AttackTiming,
     LimitOppoMoves,
-    NumberOfStraightLines,
-    ValueOfStraightLines,
-    NumberOfPassedPieces,
+    StraightLines,
+    StraightLines_MiddleProximity,
+    AggressivePieces,
+    AggressivePieces_MiddleProximity,
+    AggressivePieces_AntiCentrality,
 }
 
-pub const NUM_HEURISTICS: usize = 14;
+pub const NUM_HEURISTICS: usize = 19;
 
 #[enum_dispatch(Heuristics)]
 trait Heuristic {
@@ -56,20 +63,20 @@ struct PieceDifferential;
 
 impl Heuristic for PieceDifferential {
     fn score(&self, state: &State) -> i64 {
-        let current_player_num = state
+        let black_score = state
             .board
             .current_players_pieces(0)
             .len()
             .try_into()
             .unwrap_or(0);
-        let opponent_num = state
+        let white_score = state
             .board
             .current_players_pieces(1)
             .len()
             .try_into()
             .unwrap_or(0);
 
-        unsigned100_normalize(-10, 10, current_player_num - opponent_num)
+        unsigned100_normalize(-10, 10, black_score - white_score)
     }
 
     fn name(&self) -> &'static str {
@@ -78,9 +85,50 @@ impl Heuristic for PieceDifferential {
 }
 
 #[derive(Clone)]
-struct HoldImportantPieces;
+struct MiddleLineDifferential;
 
-impl Heuristic for HoldImportantPieces {
+impl Heuristic for MiddleLineDifferential {
+    fn score(&self, state: &State) -> i64 {
+        lazy_static! {
+            static ref MIDDLE_PIECES: HashSet<usize> = {
+                let mut middle_pieces = HashSet::new();
+                middle_pieces.insert(0);
+                middle_pieces.insert(4);
+                middle_pieces.insert(11);
+                middle_pieces.insert(18);
+                middle_pieces.insert(25);
+                middle_pieces.insert(32);
+                middle_pieces.insert(36);
+
+                middle_pieces
+            };
+        }
+
+        let black_score: i64 = state
+            .board
+            .current_players_pieces(0)
+            .iter()
+            .map(|&elt| if MIDDLE_PIECES.contains(&elt) { 1 } else { 0 })
+            .sum();
+
+        let white_score: i64 = state
+            .board
+            .current_players_pieces(1)
+            .iter()
+            .map(|&elt| if MIDDLE_PIECES.contains(&elt) { 1 } else { 0 })
+            .sum();
+        unsigned100_normalize(-7, 7, black_score - white_score)
+    }
+
+    fn name(&self) -> &'static str {
+        "Middle Line Diff"
+    }
+}
+
+#[derive(Clone)]
+struct ImportantPieces;
+
+impl Heuristic for ImportantPieces {
     fn score(&self, state: &State) -> i64 {
         let mut important_pieces_black: HashMap<usize, i64> = HashMap::new();
         let mut important_pieces_white: HashMap<usize, i64> = HashMap::new();
@@ -124,14 +172,14 @@ impl Heuristic for MiddleProximity {
             .board
             .current_players_pieces(0)
             .iter()
-            .map(location_maps::middle_proximity)
+            .map(middle_proximity)
             .sum();
 
         let white_score: i64 = state
             .board
             .current_players_pieces(1)
             .iter()
-            .map(location_maps::middle_proximity)
+            .map(middle_proximity)
             .sum();
 
         unsigned100_normalize(
@@ -147,68 +195,117 @@ impl Heuristic for MiddleProximity {
 }
 
 #[derive(Clone)]
-struct MiddlePieceDifferential;
+struct AggressionDifferential;
 
-impl Heuristic for MiddlePieceDifferential {
+impl Heuristic for AggressionDifferential {
     fn score(&self, state: &State) -> i64 {
-        lazy_static! {
-            static ref MIDDLE_PIECES: HashSet<usize> = {
-                let mut middle_pieces = HashSet::new();
-                middle_pieces.insert(0);
-                middle_pieces.insert(4);
-                middle_pieces.insert(11);
-                middle_pieces.insert(18);
-                middle_pieces.insert(25);
-                middle_pieces.insert(32);
-                middle_pieces.insert(36);
-
-                middle_pieces
-            };
-        }
-
         let black_score: i64 = state
             .board
             .current_players_pieces(0)
             .iter()
-            .map(|&elt| if MIDDLE_PIECES.contains(&elt) { 1 } else { 0 })
+            .map(white_proximity)
             .sum();
 
         let white_score: i64 = state
             .board
             .current_players_pieces(1)
             .iter()
-            .map(|&elt| if MIDDLE_PIECES.contains(&elt) { 1 } else { 0 })
+            .map(black_proximity)
             .sum();
-        unsigned100_normalize(-7, 7, black_score - white_score)
+
+        unsigned100_normalize(-34, 34, black_score - white_score)
     }
 
     fn name(&self) -> &'static str {
-        "Mid Piece Diff"
+        "Aggression Diff"
     }
 }
 
 #[derive(Clone)]
-struct WinLose;
+struct PassivenessDifferential;
 
-impl Heuristic for WinLose {
+impl Heuristic for PassivenessDifferential {
     fn score(&self, state: &State) -> i64 {
-        // don't need to normalize
-        match state.winner {
-            Some(0) => 1000,
-            Some(1) => -1000,
-            _ => 0,
-        }
+        let black_score: i64 = state
+            .board
+            .current_players_pieces(0)
+            .iter()
+            .map(black_proximity)
+            .sum();
+
+        let white_score: i64 = state
+            .board
+            .current_players_pieces(1)
+            .iter()
+            .map(white_proximity)
+            .sum();
+
+        unsigned100_normalize(-34, 34, black_score - white_score)
     }
 
     fn name(&self) -> &'static str {
-        "Win / Lose"
+        "Passive Diff"
     }
 }
 
 #[derive(Clone)]
-struct NumberDefendedEmptyHexes;
+struct Centrality;
 
-impl Heuristic for NumberDefendedEmptyHexes {
+impl Heuristic for Centrality {
+    fn score(&self, state: &State) -> i64 {
+        let black_score: i64 = state
+            .board
+            .current_players_pieces(0)
+            .iter()
+            .map(centrality)
+            .sum();
+
+        let white_score: i64 = state
+            .board
+            .current_players_pieces(1)
+            .iter()
+            .map(centrality)
+            .sum();
+
+        unsigned100_normalize(-18, 18, black_score - white_score)
+    }
+
+    fn name(&self) -> &'static str {
+        "Centrality"
+    }
+}
+
+#[derive(Clone)]
+struct AntiCentrality;
+
+impl Heuristic for AntiCentrality {
+    fn score(&self, state: &State) -> i64 {
+        let black_score: i64 = state
+            .board
+            .current_players_pieces(0)
+            .iter()
+            .map(anti_centrality)
+            .sum();
+
+        let white_score: i64 = state
+            .board
+            .current_players_pieces(1)
+            .iter()
+            .map(anti_centrality)
+            .sum();
+
+        unsigned100_normalize(-30, 30, black_score - white_score)
+    }
+
+    fn name(&self) -> &'static str {
+        "Anti Centrality"
+    }
+}
+
+#[derive(Clone)]
+struct DefendedHexes;
+
+impl Heuristic for DefendedHexes {
     fn score(&self, state: &State) -> i64 {
         let black_pieces = state.board.current_players_pieces(0);
 
@@ -260,14 +357,14 @@ impl Heuristic for NumberDefendedEmptyHexes {
     }
 
     fn name(&self) -> &'static str {
-        "Number of Defended Empty Hexes"
+        "Defended Hexes"
     }
 }
 
 #[derive(Clone)]
-struct ValueOfDefendedEmptyHexes;
+struct DefendedHexes_MiddleProximity;
 
-impl Heuristic for ValueOfDefendedEmptyHexes {
+impl Heuristic for DefendedHexes_MiddleProximity {
     fn score(&self, state: &State) -> i64 {
         let black_pieces = state.board.current_players_pieces(0);
 
@@ -311,7 +408,7 @@ impl Heuristic for ValueOfDefendedEmptyHexes {
     }
 
     fn name(&self) -> &'static str {
-        "Val Defended Empty (Mid Prox)"
+        "Defended Hexes Middle Prox"
     }
 }
 
@@ -396,9 +493,9 @@ impl Heuristic for LimitOppoMoves {
 }
 
 #[derive(Clone)]
-struct NumberUndefendedPieces;
+struct UndefendedPieces;
 
-impl Heuristic for NumberUndefendedPieces {
+impl Heuristic for UndefendedPieces {
     fn score(&self, state: &State) -> i64 {
         lazy_static! {
             static ref INVALID_BLACK_DEFENDED_PIECES: HashSet<usize> = {
@@ -491,14 +588,14 @@ impl Heuristic for NumberUndefendedPieces {
     }
 
     fn name(&self) -> &'static str {
-        "Number of Undefended Pieces"
+        "Undefended Pieces"
     }
 }
 
 #[derive(Clone)]
-struct ValueUndefendedPieces;
+struct UndefendedPieces_MiddleProximity;
 
-impl Heuristic for ValueUndefendedPieces {
+impl Heuristic for UndefendedPieces_MiddleProximity {
     fn score(&self, state: &State) -> i64 {
         lazy_static! {
             static ref INVALID_BLACK_DEFENDED_PIECES: HashSet<usize> = {
@@ -601,14 +698,14 @@ impl Heuristic for ValueUndefendedPieces {
     }
 
     fn name(&self) -> &'static str {
-        "Value of Undefended Pieces"
+        "Undefended Pieces Middle Prox"
     }
 }
 
 #[derive(Clone)]
-struct NumberOfStraightLines;
+struct StraightLines;
 
-impl Heuristic for NumberOfStraightLines {
+impl Heuristic for StraightLines {
     fn score(&self, state: &State) -> i64 {
         let black_pieces = state.board.current_players_pieces(0);
 
@@ -656,14 +753,14 @@ impl Heuristic for NumberOfStraightLines {
     }
 
     fn name(&self) -> &'static str {
-        "Number of Straight Lines"
+        "Straight Lines"
     }
 }
 
 #[derive(Clone)]
-struct ValueOfStraightLines;
+struct StraightLines_MiddleProximity;
 
-impl Heuristic for ValueOfStraightLines {
+impl Heuristic for StraightLines_MiddleProximity {
     fn score(&self, state: &State) -> i64 {
         let black_pieces = state.board.current_players_pieces(0);
 
@@ -678,9 +775,7 @@ impl Heuristic for ValueOfStraightLines {
                 Some(i) => {
                     let straight_hole = state.board.board[*i];
                     match straight_hole {
-                        Hole(Some(Black)) => {
-                            location_maps::middle_proximity(&idx)
-                        }
+                        Hole(Some(Black)) => middle_proximity(&idx),
                         _ => 0,
                     }
                 }
@@ -697,9 +792,7 @@ impl Heuristic for ValueOfStraightLines {
                 Some(i) => {
                     let straight_hole = state.board.board[*i];
                     match straight_hole {
-                        Hole(Some(White)) => {
-                            location_maps::middle_proximity(&idx)
-                        }
+                        Hole(Some(White)) => middle_proximity(&idx),
                         _ => 0,
                     }
                 }
@@ -710,14 +803,14 @@ impl Heuristic for ValueOfStraightLines {
     }
 
     fn name(&self) -> &'static str {
-        "Value of Straight Lines"
+        "Straight Lines Middle Prox"
     }
 }
 
 #[derive(Clone)]
-struct NumberOfPassedPieces;
+struct AggressivePieces;
 
-impl Heuristic for NumberOfPassedPieces {
+impl Heuristic for AggressivePieces {
     fn score(&self, state: &State) -> i64 {
         let black_pieces = state.board.current_players_pieces(0);
 
@@ -725,28 +818,24 @@ impl Heuristic for NumberOfPassedPieces {
 
         let black_furthest = black_pieces
             .iter()
-            .map(|&elt| location_maps::black_proximity_row(elt))
+            .map(|&elt| black_proximity_row(elt))
             .max()
-            .unwrap();
+            .unwrap_or(0);
 
         let white_furthest = white_pieces
             .iter()
-            .map(|&elt| location_maps::white_proximity_row(elt))
+            .map(|&elt| white_proximity_row(elt))
             .max()
-            .unwrap();
+            .unwrap_or(0);
 
         let black_score = black_pieces
             .iter()
-            .filter(|&elt| {
-                location_maps::black_proximity_row(*elt) >= 12 - white_furthest
-            })
+            .filter(|&elt| black_proximity_row(*elt) >= 12 - white_furthest)
             .count();
 
         let white_score = white_pieces
             .iter()
-            .filter(|&elt| {
-                location_maps::white_proximity_row(*elt) >= 12 - black_furthest
-            })
+            .filter(|&elt| white_proximity_row(*elt) >= 12 - black_furthest)
             .count();
 
         unsigned100_normalize(
@@ -758,7 +847,97 @@ impl Heuristic for NumberOfPassedPieces {
     }
 
     fn name(&self) -> &'static str {
-        "Number of Passed Pieces"
+        "Aggr Pieces"
+    }
+}
+
+#[derive(Clone)]
+struct AggressivePieces_MiddleProximity;
+
+impl Heuristic for AggressivePieces_MiddleProximity {
+    fn score(&self, state: &State) -> i64 {
+        let black_pieces = state.board.current_players_pieces(0);
+
+        let white_pieces = state.board.current_players_pieces(1);
+
+        let black_furthest = black_pieces
+            .iter()
+            .map(|&elt| black_proximity_row(elt))
+            .max()
+            .unwrap_or(0);
+
+        let white_furthest = white_pieces
+            .iter()
+            .map(|&elt| white_proximity_row(elt))
+            .max()
+            .unwrap_or(0);
+
+        let black_score: i64 = black_pieces
+            .iter()
+            .filter(|&elt| black_proximity_row(*elt) >= 12 - white_furthest)
+            .map(middle_proximity)
+            .sum();
+
+        let white_score: i64 = white_pieces
+            .iter()
+            .filter(|&elt| white_proximity_row(*elt) >= 12 - black_furthest)
+            .map(middle_proximity)
+            .sum();
+
+        if AggressivePieces.score(state) <= -300 {
+            -1000
+        } else {
+            unsigned100_normalize(-12, 12, white_score - black_score)
+        }
+    }
+
+    fn name(&self) -> &'static str {
+        "Aggr Pieces Middle Prox"
+    }
+}
+
+#[derive(Clone)]
+struct AggressivePieces_AntiCentrality;
+
+impl Heuristic for AggressivePieces_AntiCentrality {
+    fn score(&self, state: &State) -> i64 {
+        let black_pieces = state.board.current_players_pieces(0);
+
+        let white_pieces = state.board.current_players_pieces(1);
+
+        let black_furthest = black_pieces
+            .iter()
+            .map(|&elt| black_proximity_row(elt))
+            .max()
+            .unwrap_or(0);
+
+        let white_furthest = white_pieces
+            .iter()
+            .map(|&elt| white_proximity_row(elt))
+            .max()
+            .unwrap_or(0);
+
+        let black_score: i64 = black_pieces
+            .iter()
+            .filter(|&elt| black_proximity_row(*elt) >= 12 - white_furthest)
+            .map(anti_centrality)
+            .sum();
+
+        let white_score: i64 = white_pieces
+            .iter()
+            .filter(|&elt| white_proximity_row(*elt) >= 12 - black_furthest)
+            .map(anti_centrality)
+            .sum();
+
+        if AggressivePieces.score(state) <= -300 {
+            -1000
+        } else {
+            unsigned100_normalize(-6, 6, white_score - black_score)
+        }
+    }
+
+    fn name(&self) -> &'static str {
+        "Aggr Pieces Anti Centrality"
     }
 }
 
@@ -798,21 +977,34 @@ impl HeuristicWeights {
         HeuristicWeights {
             functions: [
                 Heuristics::PieceDifferential(PieceDifferential),
-                Heuristics::HoldImportantPieces(HoldImportantPieces),
+                Heuristics::MiddleLineDifferential(MiddleLineDifferential),
+                Heuristics::ImportantPieces(ImportantPieces),
                 Heuristics::MiddleProximity(MiddleProximity),
-                Heuristics::MiddlePieceDifferential(MiddlePieceDifferential),
-                Heuristics::WinLose(WinLose),
-                Heuristics::NumberDefendedEmptyHexes(NumberDefendedEmptyHexes),
-                Heuristics::ValueOfDefendedEmptyHexes(
-                    ValueOfDefendedEmptyHexes,
+                Heuristics::AggressionDifferential(AggressionDifferential),
+                Heuristics::PassivenessDifferential(PassivenessDifferential),
+                Heuristics::Centrality(Centrality),
+                Heuristics::AntiCentrality(AntiCentrality),
+                Heuristics::DefendedHexes(DefendedHexes),
+                Heuristics::DefendedHexes_MiddleProximity(
+                    DefendedHexes_MiddleProximity,
                 ),
-                Heuristics::NumberUndefendedPieces(NumberUndefendedPieces),
-                Heuristics::ValueUndefendedPieces(ValueUndefendedPieces),
+                Heuristics::UndefendedPieces(UndefendedPieces),
+                Heuristics::UndefendedPieces_MiddleProximity(
+                    UndefendedPieces_MiddleProximity,
+                ),
                 Heuristics::AttackTiming(AttackTiming),
                 Heuristics::LimitOppoMoves(LimitOppoMoves),
-                Heuristics::NumberOfStraightLines(NumberOfStraightLines),
-                Heuristics::ValueOfStraightLines(ValueOfStraightLines),
-                Heuristics::NumberOfPassedPieces(NumberOfPassedPieces),
+                Heuristics::StraightLines(StraightLines),
+                Heuristics::StraightLines_MiddleProximity(
+                    StraightLines_MiddleProximity,
+                ),
+                Heuristics::AggressivePieces(AggressivePieces),
+                Heuristics::AggressivePieces_MiddleProximity(
+                    AggressivePieces_MiddleProximity,
+                ),
+                Heuristics::AggressivePieces_AntiCentrality(
+                    AggressivePieces_AntiCentrality,
+                ),
             ],
             weights,
         }
