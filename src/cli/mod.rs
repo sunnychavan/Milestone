@@ -1,3 +1,4 @@
+use crate::ai::genetic::GeneticAlgorithm;
 use crate::ai::heuristics::NUM_HEURISTICS;
 use crate::ai::tree::SearchLimit;
 use crate::game::gamestate::{GameBuilder, State};
@@ -78,12 +79,12 @@ pub fn choose_type_of_game() -> State {
                     // game between two AI
                     gb.set_player_1(PossiblePlayer::AI(AI::new(
                         "AI 1".to_string(),
-                        [1; NUM_HEURISTICS],
+                        [1.0; NUM_HEURISTICS],
                         SearchLimit::Depth(depth),
                     )))
                     .set_player_2(PossiblePlayer::AI(AI::new(
                         "AI 2".to_string(),
-                        [1; NUM_HEURISTICS],
+                        [1.0; NUM_HEURISTICS],
                         SearchLimit::Depth(depth),
                     )))
                     .build()
@@ -111,6 +112,68 @@ pub fn play_game() {
     }
 
     println!("{game}");
+}
+
+pub fn run_genetic_game(
+    black_weights: [f64; NUM_HEURISTICS],
+    white_weights: [f64; NUM_HEURISTICS],
+) -> State {
+    println!("Genetic Algorithm Game Running");
+
+    let gb = GameBuilder::new();
+    // game between two AI
+    gb.set_player_1(PossiblePlayer::AI(AI::new(
+        "AI 1".to_string(),
+        black_weights,
+        SearchLimit::Depth(4),
+    )))
+    .set_player_2(PossiblePlayer::AI(AI::new(
+        "AI 2".to_string(),
+        white_weights,
+        SearchLimit::Depth(4),
+    )))
+    .build()
+}
+
+pub fn play_genetic_game(
+    black_weights: [f64; NUM_HEURISTICS],
+    white_weights: [f64; NUM_HEURISTICS],
+) -> Option<u8> {
+    let mut game = run_genetic_game(black_weights, white_weights);
+
+    println!("{game}");
+
+    while game.active {
+        game.play_one_turn();
+    }
+
+    println!("{game}");
+
+    game.winner
+}
+
+pub fn choose_phase() {
+    println!(
+        "Enter:\n\t(1) For Generic Game Options \
+               \n\t(2) For Genetic Algorithm \
+               "
+    );
+    let mut input = String::new();
+    match io::stdin().read_line(&mut input) {
+        Ok(_) => match input.as_str().trim() {
+            "1" => play_game(),
+            "2" => {
+                GeneticAlgorithm::new().run();
+            }
+            _ => {
+                println!("Oops. That isn't a valid input, try again:");
+            }
+        },
+        Err(e) => {
+            println!("Oops. Something went wrong ({e})");
+        }
+    }
+    println!("please choose");
 }
 
 pub fn get_name_from_user(label: &str) -> String {

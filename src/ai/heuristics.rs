@@ -964,7 +964,7 @@ pub struct HeuristicWeights {
     weights: Weights,
 }
 
-pub type Weights = [i64; NUM_HEURISTICS];
+pub type Weights = [f64; NUM_HEURISTICS];
 
 impl Debug for HeuristicWeights {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
@@ -1018,17 +1018,17 @@ impl HeuristicWeights {
         }
     }
 
-    pub fn score(&self, state: &State) -> i64 {
+    pub fn score(&self, state: &State) -> f64 {
         if !state.active {
             match state.winner {
-                Some(0) => return i64::MAX,
-                Some(1) => return i64::MIN,
+                Some(0) => return f64::MAX,
+                Some(1) => return f64::MIN,
                 _ => (),
             }
         }
-        let mut result = 0;
+        let mut result = 0.0;
         for (w, heuristic_fn) in zip(self.weights, self.functions.iter()) {
-            let weighted_score = w * heuristic_fn.score(state);
+            let weighted_score = w * (heuristic_fn.score(state) as f64);
             result += weighted_score
         }
         result

@@ -76,7 +76,7 @@ impl Default for AI {
     fn default() -> Self {
         AI {
             name: String::default(),
-            weights: [1; NUM_HEURISTICS],
+            weights: [1.0; NUM_HEURISTICS],
             limit: SearchLimit::default(),
         }
     }
@@ -86,7 +86,7 @@ impl AI {
     pub fn from_name(name: String) -> AI {
         AI {
             name,
-            weights: [1; NUM_HEURISTICS],
+            weights: [1.0; NUM_HEURISTICS],
             limit: SearchLimit::default(),
         }
     }
