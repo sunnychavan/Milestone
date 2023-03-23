@@ -9,7 +9,11 @@ use super::{
     player::PossiblePlayer,
     player::AI,
 };
-use std::fmt::{self};
+use rusqlite::{params, Connection, Error, Result};
+use std::{
+    fmt::{self},
+    result,
+};
 
 #[derive(Default)]
 pub struct GameBuilder {
@@ -42,6 +46,7 @@ impl GameBuilder {
             current_turn: 0,
             board: self.board.to_owned(),
             players: self.players,
+            state_history: vec![self.board.to_repr_string()],
         }
     }
 }
@@ -53,6 +58,7 @@ pub struct State {
     pub current_turn: u8,
     pub board: Board,
     pub players: [PossiblePlayer; 2],
+    pub state_history: Vec<String>,
 }
 
 impl fmt::Debug for State {
@@ -248,6 +254,10 @@ impl State {
         false
     }
 
+    pub fn add_to_state_history(&mut self) {
+        self.state_history.push(self.board.to_repr_string())
+    }
+
     #[allow(clippy::result_unit_err)]
     pub fn from_repr_string(s: &str) -> Result<State, ()> {
         match s.get(0..=1) {
@@ -265,6 +275,7 @@ impl State {
                         PossiblePlayer::AI(AI::default()),
                     ],
                     board: b?,
+                    state_history: vec![s.to_string()],
                 })
             }
             Some("w:") => {
@@ -281,6 +292,7 @@ impl State {
                         PossiblePlayer::AI(AI::default()),
                     ],
                     board: b?,
+                    state_history: vec![s.to_string()],
                 })
             }
             _ => Err(()),
@@ -297,4 +309,64 @@ impl State {
             _ => panic!("Impossible current turn"),
         }
     }
+
+    pub fn push_game_and_state(&self) -> Result<()> {
+        let mut conn =
+            Connection::open("./src/database/example.sqlite3").unwrap();
+        let game_id = self.push_game(&mut conn).unwrap();
+        self.push_game_state_history(&mut conn, game_id).unwrap();
+        Ok(())
+    }
+
+    pub fn push_game(&self, conn: &mut Connection) -> Result<i64> {
+        let game_winner = self.winner.unwrap();
+        conn.execute(
+            r#"
+            INSERT INTO game_table (result)
+            VALUES (?)
+            "#,
+            [game_winner],
+        )?;
+        let last_id = conn.last_insert_rowid();
+        Ok(last_id)
+    }
+
+    pub fn push_game_state_history(
+        &self,
+        conn: &mut Connection,
+        game_id: i64,
+    ) -> Result<()> {
+        let tx = conn.transaction()?;
+        for (i, state) in self.state_history.clone().into_iter().enumerate() {
+            tx.execute(
+                r#"
+                INSERT INTO state_table (state, game_id, move_number)
+                VALUES (?1, ?2, ?3)
+                "#,
+                params![state, game_id, i],
+            )?;
+        }
+        tx.commit()
+    }
+
+    // pub fn push_game_state_string(
+    //     &self,
+    //     tx: Transaction,
+    //     move_number: u32,
+    //     state: String,
+    //     game_id: i64,
+    // ) -> Result<()> {
+    //     // connection path assume code running in "Milestone-Rust" directory
+    //     // let pool = SqlitePool::connect("sqlite:./src/database/example.sqlite3").await?;
+
+    //     tx.execute(
+    //         r#"
+    //         INSERT INTO state_table (state, game_id, move_number)
+    //         VALUES (?1, ?2, ?3)
+    //         "#,
+    //         params![state, game_id, move_number],
+    //     )?;
+
+    //     Ok(())
+    // }
 }
