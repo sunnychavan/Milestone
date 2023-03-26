@@ -19,3 +19,10 @@ TODO:
   - "b:b/bb/bbb/bbbb/3/4/3/4/3/wwww/www/ww/w"
     - `b` -> black, `b` -> white, `x` -> number of blank squares, `/` means next
       line, `b:` means black's turn (`w:` for white's turn)
+
+## Arguments
+
+- Passing any arguments to this program (ie `cargo run genetic` will cause the
+  program to launch in genetic mode)
+- In addition, the following env vars can be set:
+  - `LAUNCH_ARG`: corresponds to the number input at the beginning

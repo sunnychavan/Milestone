@@ -6,7 +6,7 @@ use crate::game::gamestate::{GameBuilder, State};
 use crate::game::player::PossiblePlayer;
 
 use crate::game::player::{Person, AI};
-use std::io;
+use std::{env, io};
 
 #[derive(PartialEq)]
 enum GameType {
@@ -23,7 +23,7 @@ fn get_gametype_from_user() -> GameType {
         "Enter:\n\t(1) to play a game as black vs the AI,\
                \n\t(2) to play a game as white vs the AI,\
                \n\t(3) to play against another human,\
-               \n\t(4) to have two AIs play each other
+               \n\t(4) to have two AIs play each other\
                \n\t(5) to load from a string, or\
                \n\t(0) to launch the genetic algorithm."
     );
@@ -31,14 +31,9 @@ fn get_gametype_from_user() -> GameType {
     let mut input = String::new();
     match io::stdin().read_line(&mut input) {
         Ok(_) => {
-            match input.as_str().trim() {
-                "1" => GameType::Black,
-                "2" => GameType::White,
-                "3" => GameType::Humans,
-                "4" => GameType::AIs,
-                "5" => GameType::String,
-                "0" => GameType::Genetic,
-                _ => {
+            match get_gametype_from_string(input.as_str().trim()) {
+                Some(gt) => gt,
+                None => {
                     println!("Sorry, couldn't recognize that input. Please try again:");
                     get_gametype_from_user()
                 }
@@ -47,6 +42,18 @@ fn get_gametype_from_user() -> GameType {
         Err(e) => {
             panic!("Oops. Something went wrong ({e})");
         }
+    }
+}
+
+fn get_gametype_from_string(g: &str) -> Option<GameType> {
+    match g {
+        "1" => Some(GameType::Black),
+        "2" => Some(GameType::White),
+        "3" => Some(GameType::Humans),
+        "4" => Some(GameType::AIs),
+        "5" => Some(GameType::String),
+        "0" => Some(GameType::Genetic),
+        _ => None,
     }
 }
 
@@ -171,10 +178,24 @@ pub fn play_genetic_game(
     game.winner
 }
 
+pub fn start_genetic_process() {
+    GeneticAlgorithm::new().run();
+}
+
 pub fn choose_phase() {
-    let gametype = get_gametype_from_user();
+    let gametype = match env::var("LAUNCH_ARG") {
+        Ok(i) => {
+            println!("Using argument {i} from environment variable.");
+            match get_gametype_from_string(i.as_str()) {
+                Some(i) => i,
+                None => get_gametype_from_user(),
+            }
+        }
+        Err(_) => get_gametype_from_user(),
+    };
+
     if gametype == GameType::Genetic {
-        GeneticAlgorithm::new().run();
+        start_genetic_process()
     } else {
         play_game(get_game_from_gametype(gametype))
     }
