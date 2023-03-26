@@ -16,7 +16,8 @@ fn create_game_env() -> milestone::game::gamestate::State {
 }
 
 fn build_tree(state: &mut State, depth: u8) -> GameTree {
-    let mut tree = GameTree::new(state.to_owned(), depth, &[1; NUM_HEURISTICS]);
+    let mut tree =
+        GameTree::new(state.to_owned(), depth, &[1.0; NUM_HEURISTICS]);
     tree.build_eval_tree();
     tree
 }
