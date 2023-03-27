@@ -1,6 +1,7 @@
 pub mod ai;
 pub mod cli;
 pub mod game;
+pub mod genetic;
 
 use dotenv::dotenv;
 use env_logger;

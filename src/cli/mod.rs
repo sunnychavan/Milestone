@@ -1,7 +1,7 @@
-use crate::ai::genetic::GeneticAlgorithm;
 use crate::ai::heuristics::NUM_HEURISTICS;
 use crate::ai::tree::SearchLimit;
 use crate::game::gamestate::{GameBuilder, State};
+use crate::genetic;
 
 use crate::game::player::PossiblePlayer;
 
@@ -141,46 +141,8 @@ pub fn play_game(mut game: State) {
     info!("{game}");
 }
 
-pub fn run_genetic_game(
-    black_weights: [f64; NUM_HEURISTICS],
-    white_weights: [f64; NUM_HEURISTICS],
-) -> State {
-    info!("Genetic Algorithm Game Running");
-
-    let gb = GameBuilder::new();
-    // game between two AI
-    gb.set_player_1(PossiblePlayer::AI(AI::new(
-        "AI 1".to_string(),
-        black_weights,
-        SearchLimit::Depth(4),
-    )))
-    .set_player_2(PossiblePlayer::AI(AI::new(
-        "AI 2".to_string(),
-        white_weights,
-        SearchLimit::Depth(4),
-    )))
-    .build()
-}
-
-pub fn play_genetic_game(
-    black_weights: [f64; NUM_HEURISTICS],
-    white_weights: [f64; NUM_HEURISTICS],
-) -> Option<u8> {
-    let mut game = run_genetic_game(black_weights, white_weights);
-
-    trace!("{game}");
-
-    while game.active {
-        game.play_one_turn();
-    }
-
-    trace!("{game}");
-
-    game.winner
-}
-
 pub fn start_genetic_process() {
-    GeneticAlgorithm::new().run();
+    genetic::run();
 }
 
 pub fn choose_phase() {

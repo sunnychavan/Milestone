@@ -1,4 +1,4 @@
-use crate::ai::heuristics::{Weights, NUM_HEURISTICS};
+use crate::ai::heuristics::{normalize_weights, Weights, NUM_HEURISTICS};
 use crate::ai::tree::SearchLimit;
 use crate::game::board::Move;
 
@@ -8,7 +8,7 @@ use super::gamestate::State;
 use core::fmt::Debug;
 
 use log::{info, trace};
-use std::io;
+use std::{fmt, io};
 
 #[derive(Debug, Clone, Default, PartialEq)]
 pub struct Person {
@@ -69,7 +69,7 @@ fn handle_move_input(
 #[derive(Debug, Clone, PartialEq)]
 pub struct AI {
     name: String,
-    weights: Weights,
+    pub weights: Weights,
     limit: SearchLimit,
 }
 
@@ -93,6 +93,8 @@ impl AI {
     }
 
     pub fn new(name: String, weights: Weights, limit: SearchLimit) -> AI {
+        normalize_weights(&mut weights.to_owned());
+
         AI {
             name,
             weights,
