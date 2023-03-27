@@ -21,7 +21,7 @@ fn main() {
 
     let args: Vec<String> = env::args().collect();
     if args.len() > 1 {
-        info!("Arugment passed. Starting the genetic process");
+        info!("Argument passed. Starting the genetic process");
         cli::start_genetic_process()
     } else {
         cli::choose_phase()
