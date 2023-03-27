@@ -966,6 +966,13 @@ pub struct HeuristicWeights {
 
 pub type Weights = [f64; NUM_HEURISTICS];
 
+pub fn normalize_weights(w: &mut Weights) {
+    let sum: f64 = w.iter().sum();
+    for weight in w.iter_mut() {
+        *weight /= sum;
+    }
+}
+
 impl Debug for HeuristicWeights {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         f.debug_list().entries(self.weights).finish()
