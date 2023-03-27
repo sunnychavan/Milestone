@@ -26,3 +26,4 @@ TODO:
   program to launch in genetic mode)
 - In addition, the following env vars can be set:
   - `LAUNCH_ARG`: corresponds to the number input at the beginning
+  - `RUST_LOG`: the tracing directive for `env_logger` to use. Use `info` to only display info-level-logs and higher, or `trace` to display all
