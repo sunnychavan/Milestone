@@ -6,6 +6,7 @@ use crate::game::gamestate::{GameBuilder, State};
 use crate::game::player::PossiblePlayer;
 
 use crate::game::player::{Person, AI};
+use log::{info, trace};
 use std::{env, io};
 
 #[derive(PartialEq)]
@@ -105,7 +106,7 @@ fn get_game_from_gametype(game_type: GameType) -> State {
             .build()
         }
         GameType::String => {
-            println!("Paste string below:");
+            info!("Paste string below:");
             let mut input = String::new();
             match io::stdin().read_line(&mut input) {
                 Ok(_) => {
@@ -131,20 +132,20 @@ fn get_game_from_gametype(game_type: GameType) -> State {
 }
 
 pub fn play_game(mut game: State) {
-    println!("{game}");
+    info!("{game}");
 
     while game.active {
         game.play_one_turn();
     }
 
-    println!("{game}");
+    info!("{game}");
 }
 
 pub fn run_genetic_game(
     black_weights: [f64; NUM_HEURISTICS],
     white_weights: [f64; NUM_HEURISTICS],
 ) -> State {
-    println!("Genetic Algorithm Game Running");
+    info!("Genetic Algorithm Game Running");
 
     let gb = GameBuilder::new();
     // game between two AI
@@ -167,13 +168,13 @@ pub fn play_genetic_game(
 ) -> Option<u8> {
     let mut game = run_genetic_game(black_weights, white_weights);
 
-    println!("{game}");
+    trace!("{game}");
 
     while game.active {
         game.play_one_turn();
     }
 
-    println!("{game}");
+    trace!("{game}");
 
     game.winner
 }
@@ -185,7 +186,7 @@ pub fn start_genetic_process() {
 pub fn choose_phase() {
     let gametype = match env::var("LAUNCH_ARG") {
         Ok(i) => {
-            println!("Using argument {i} from environment variable.");
+            info!("Using argument {i} from environment variable.");
             match get_gametype_from_string(i.as_str()) {
                 Some(i) => i,
                 None => get_gametype_from_user(),
