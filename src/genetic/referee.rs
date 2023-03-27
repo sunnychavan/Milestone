@@ -1,6 +1,7 @@
 use log::{debug, info, trace};
 use rand::seq::SliceRandom;
 use rand::{thread_rng, Rng};
+use rayon::prelude::*;
 
 use crate::game::{
     gamestate::{GameBuilder, State},
@@ -57,29 +58,31 @@ impl Referee {
     }
 
     pub fn play(&mut self) {
-        let matches = self.generate_matches();
+        let matches = Vec::from_iter(self.generate_matches());
         let num_matches = matches.len();
 
-        for (match_num, (agent_one_idx, agent_two_idx)) in
-            matches.iter().enumerate()
-        {
-            debug!(
-                "Playing a match between {} and {} in batch {}. Match {} of {}.",
-                agent_one_idx,
-                agent_two_idx,
-                self.batch_num,
-                match_num + 1,
-                num_matches,
-            );
-            let (agent_one_wins, agent_two_wins) = Self::play_one_match(
-                &self.agents[*agent_one_idx],
-                &self.agents[*agent_two_idx],
-            );
+        // for (agent_one_idx, agent_two_idx) in
+        let results: Vec<(usize, u8, usize, u8)> = matches
+            .into_par_iter()
+            .map(|(agent_one_idx, agent_two_idx)| {
+                debug!(
+                    "Playing a match between {} and {} in batch {}",
+                    agent_one_idx, agent_two_idx, self.batch_num,
+                );
+                let (agent_one_wins, agent_two_wins) = Self::play_one_match(
+                    &self.agents[agent_one_idx],
+                    &self.agents[agent_two_idx],
+                );
 
-            self.results[*agent_one_idx].0 += agent_one_wins as u32;
-            self.results[*agent_one_idx].1 += 2;
-            self.results[*agent_two_idx].0 += agent_two_wins as u32;
-            self.results[*agent_two_idx].1 += 2;
+                (agent_one_idx, agent_one_wins, agent_two_idx, agent_two_wins)
+            })
+            .collect();
+
+        for (a1_idx, a1_w, a2_idx, a2_w) in results {
+            self.results[a1_idx].0 += a1_w as u32;
+            self.results[a1_idx].1 += 2;
+            self.results[a2_idx].0 += a2_w as u32;
+            self.results[a2_idx].1 += 2;
         }
 
         info!("Results of batch {}: {:?}", self.batch_num, self.results);

@@ -419,6 +419,7 @@ dependencies = [
  "log",
  "petgraph",
  "rand",
+ "rayon",
  "separator",
 ]
 

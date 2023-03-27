@@ -12,9 +12,9 @@ const NUM_AGENTS_RETAINED: usize = 2;
 const NUM_CHILDREN_PER_RETAINED_AGENT: usize = 2;
 const PERTURB_AMT: f64 = 0.1;
 
-pub const NUM_AGENTS: usize = 12;
-pub const NUM_MATCHES: usize = 36;
-const AGENT_DEPTH: SearchLimit = SearchLimit::Depth(2);
+pub const NUM_AGENTS: usize = 36;
+pub const NUM_MATCHES: usize = 108;
+const AGENT_DEPTH: SearchLimit = SearchLimit::Depth(4);
 
 pub fn run() -> Referee {
     let mut prev_batch = initial_batch();
