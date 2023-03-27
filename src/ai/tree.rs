@@ -182,7 +182,6 @@ impl GameTree {
                         .edges(root_idx)
                         .map(|e| (e.target(), *e.weight()))
                         .collect();
-                    // println!("DEBUG (MIN): {:?}", outgoing_edges);
                     for (dest, mv) in outgoing_edges {
                         let new_score = self.max_value(dest, alpha, beta).0;
                         let new_move = Some(mv);

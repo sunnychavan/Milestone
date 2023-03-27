@@ -7,6 +7,7 @@ use crate::ai::tree::get_best_move;
 use super::gamestate::State;
 use core::fmt::Debug;
 
+use log::{info, trace};
 use std::io;
 
 #[derive(Debug, Clone, Default, PartialEq)]
@@ -44,7 +45,7 @@ impl Player for Person {
             Err(e) => println!("Oops. Something went wrong ({e})"),
         }
 
-        println!("{state}");
+        info!("{state}");
     }
 }
 
@@ -115,9 +116,7 @@ impl Player for AI {
             .move_piece(origin, dest, true)
             .expect("could not play the AI-suggested move");
 
-        println!("{sugg_move:#?}");
-
-        println!("{state}");
+        trace!("{sugg_move:#?}");
     }
 }
 
