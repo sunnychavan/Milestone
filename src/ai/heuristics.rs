@@ -816,34 +816,32 @@ impl Heuristic for AggressivePieces {
 
         let white_pieces = state.board.current_players_pieces(1);
 
-        let black_furthest = black_pieces
-            .iter()
-            .map(|&elt| black_proximity_row(elt))
-            .max()
-            .unwrap_or(0);
+        let black_furthest =
+            black_proximity_row(black_pieces.last().unwrap_or(&0));
 
-        let white_furthest = white_pieces
-            .iter()
-            .map(|&elt| white_proximity_row(elt))
-            .max()
-            .unwrap_or(0);
+        let white_furthest =
+            white_proximity_row(white_pieces.first().unwrap_or(&36));
 
         let black_score = black_pieces
             .iter()
-            .filter(|&elt| black_proximity_row(*elt) >= 12 - white_furthest)
+            .filter(|&elt| black_proximity_row(elt) >= 12 - white_furthest)
             .count();
 
         let white_score = white_pieces
             .iter()
-            .filter(|&elt| white_proximity_row(*elt) >= 12 - black_furthest)
+            .filter(|&elt| white_proximity_row(elt) >= 12 - black_furthest)
             .count();
 
-        unsigned100_normalize(
-            -10,
-            10,
-            i64::try_from(white_score).unwrap()
-                - i64::try_from(black_score).unwrap(),
-        )
+        let diff = i64::try_from(white_score).unwrap()
+            - i64::try_from(black_score).unwrap();
+
+        if diff <= -2 {
+            -1000
+        } else if diff >= 2 {
+            1000
+        } else {
+            unsigned100_normalize(-9, 9, diff)
+        }
     }
 
     fn name(&self) -> &'static str {
@@ -860,32 +858,33 @@ impl Heuristic for AggressivePieces_MiddleProximity {
 
         let white_pieces = state.board.current_players_pieces(1);
 
-        let black_furthest = black_pieces
-            .iter()
-            .map(|&elt| black_proximity_row(elt))
-            .max()
-            .unwrap_or(0);
+        let black_furthest =
+            black_proximity_row(black_pieces.last().unwrap_or(&0));
 
-        let white_furthest = white_pieces
-            .iter()
-            .map(|&elt| white_proximity_row(elt))
-            .max()
-            .unwrap_or(0);
+        let white_furthest =
+            white_proximity_row(white_pieces.first().unwrap_or(&36));
 
-        let black_score: i64 = black_pieces
+        let black_aggr_pieces = black_pieces
             .iter()
-            .filter(|&elt| black_proximity_row(*elt) >= 12 - white_furthest)
-            .map(middle_proximity)
-            .sum();
+            .filter(|&elt| black_proximity_row(elt) >= 12 - white_furthest);
 
-        let white_score: i64 = white_pieces
+        let white_aggr_pieces = white_pieces
             .iter()
-            .filter(|&elt| white_proximity_row(*elt) >= 12 - black_furthest)
-            .map(middle_proximity)
-            .sum();
+            .filter(|&elt| white_proximity_row(elt) >= 12 - black_furthest);
 
-        if AggressivePieces.score(state) <= -300 {
+        let black_score: i64 =
+            black_aggr_pieces.clone().map(middle_proximity).sum();
+
+        let white_score: i64 =
+            white_aggr_pieces.clone().map(middle_proximity).sum();
+
+        let diff = i64::try_from(white_aggr_pieces.count()).unwrap()
+            - i64::try_from(black_aggr_pieces.count()).unwrap();
+
+        if diff <= -2 {
             -1000
+        } else if diff >= 2 {
+            1000
         } else {
             unsigned100_normalize(-12, 12, white_score - black_score)
         }
@@ -905,32 +904,33 @@ impl Heuristic for AggressivePieces_AntiCentrality {
 
         let white_pieces = state.board.current_players_pieces(1);
 
-        let black_furthest = black_pieces
-            .iter()
-            .map(|&elt| black_proximity_row(elt))
-            .max()
-            .unwrap_or(0);
+        let black_furthest =
+            black_proximity_row(black_pieces.last().unwrap_or(&0));
 
-        let white_furthest = white_pieces
-            .iter()
-            .map(|&elt| white_proximity_row(elt))
-            .max()
-            .unwrap_or(0);
+        let white_furthest =
+            white_proximity_row(white_pieces.first().unwrap_or(&36));
 
-        let black_score: i64 = black_pieces
+        let black_aggr_pieces = black_pieces
             .iter()
-            .filter(|&elt| black_proximity_row(*elt) >= 12 - white_furthest)
-            .map(anti_centrality)
-            .sum();
+            .filter(|&elt| black_proximity_row(elt) >= 12 - white_furthest);
 
-        let white_score: i64 = white_pieces
+        let white_aggr_pieces = white_pieces
             .iter()
-            .filter(|&elt| white_proximity_row(*elt) >= 12 - black_furthest)
-            .map(anti_centrality)
-            .sum();
+            .filter(|&elt| white_proximity_row(elt) >= 12 - black_furthest);
 
-        if AggressivePieces.score(state) <= -300 {
+        let black_score: i64 =
+            black_aggr_pieces.clone().map(anti_centrality).sum();
+
+        let white_score: i64 =
+            white_aggr_pieces.clone().map(anti_centrality).sum();
+
+        let diff = i64::try_from(white_aggr_pieces.count()).unwrap()
+            - i64::try_from(black_aggr_pieces.count()).unwrap();
+
+        if diff <= -2 {
             -1000
+        } else if diff >= 2 {
+            1000
         } else {
             unsigned100_normalize(-6, 6, white_score - black_score)
         }
