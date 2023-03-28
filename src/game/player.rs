@@ -46,8 +46,6 @@ impl Player for Person {
             }
             Err(e) => println!("Oops. Something went wrong ({e})"),
         }
-
-        info!("{state}");
     }
 }
 

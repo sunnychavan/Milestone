@@ -64,7 +64,7 @@ lazy_static! {
         .map_or(SearchLimit::Depth(4), |elt| SearchLimit::Depth(
             match elt.parse() {
               Ok(i) => {
-                info!("Using AGENT_DEPTH environment variable({})", i);
+                info!("Using AGENT_DEPTH environment variable ({})", i);
                 i
               }
               _ => 4
@@ -72,7 +72,7 @@ lazy_static! {
         ));
 }
 
-pub fn run() -> Referee {
+pub fn run() -> AI {
     let mut prev_batch = initial_batch();
     let mut batch_num = 1;
 
@@ -80,7 +80,7 @@ pub fn run() -> Referee {
         prev_batch = run_one_batch(prev_batch);
         batch_num += 1
     }
-    prev_batch
+    get_best_agents(prev_batch).first().unwrap().to_owned()
 }
 
 fn initial_batch() -> Referee {
@@ -89,7 +89,7 @@ fn initial_batch() -> Referee {
         agents.push(random_agent());
     }
 
-    Referee::new(agents.try_into().unwrap(), 1)
+    Referee::new(agents, 1)
 }
 
 fn run_one_batch(mut prev: Referee) -> Referee {
@@ -103,14 +103,22 @@ fn run_one_batch(mut prev: Referee) -> Referee {
     info!("Batch #{old_batch_num} completed with best agents: {old_best_agents:#.3?}");
     let new_agents = mutate(old_best_agents);
 
-    Referee::new(new_agents.try_into().unwrap(), old_batch_num + 1)
+    Referee::new(new_agents, old_batch_num + 1)
+}
+
+fn checked_div(a: u32, b: u32) -> f32 {
+    if b == 0 {
+        0.0
+    } else {
+        a as f32 / b as f32
+    }
 }
 
 fn get_best_agents(r: Referee) -> Vec<AI> {
     let mut sorted_agents = r.get_agents_with_results();
     sorted_agents.sort_by(|((w1, t1), _), ((w2, t2), _)| {
-        let p1 = *w1 as f32 / *t1 as f32;
-        let p2 = *w2 as f32 / *t2 as f32;
+        let p1 = checked_div(*w1, *t1);
+        let p2 = checked_div(*w2, *t2);
         p2.partial_cmp(&p1).unwrap()
     });
     sorted_agents
@@ -127,7 +135,8 @@ fn children_from_agent(parent: AI) -> Vec<AI> {
     for _ in 0..*NUM_CHILDREN_PER_RETAINED_AGENT {
         let mut child_weights = parent.weights.to_owned();
         for (idx, w) in child_weights.into_iter().enumerate() {
-            child_weights[idx] = w * rng.gen_range(-*PERTURB_AMT..*PERTURB_AMT)
+            child_weights[idx] =
+                w * rng.gen_range(1.0 - *PERTURB_AMT..1.0 + *PERTURB_AMT)
         }
         children.push(AI::new(
             String::default(),
@@ -143,7 +152,7 @@ fn random_agent() -> AI {
     let mut weights = [1.0; NUM_HEURISTICS];
     let mut rng = rand::thread_rng();
     for (idx, _) in weights.into_iter().enumerate() {
-        weights[idx] = rng.gen_range(0.0..1.5);
+        weights[idx] = rng.gen_range(0.0..1.0);
     }
     AI::new(String::default(), weights, AGENT_DEPTH.to_owned())
 }
