@@ -1,4 +1,6 @@
-use crate::ai::heuristics::{normalize_weights, Weights, NUM_HEURISTICS};
+use crate::ai::heuristics::{
+    normalize_weights, HeuristicWeights, Weights, NUM_HEURISTICS,
+};
 use crate::ai::tree::SearchLimit;
 use crate::game::board::Move;
 
@@ -44,8 +46,6 @@ impl Player for Person {
             }
             Err(e) => println!("Oops. Something went wrong ({e})"),
         }
-
-        info!("{state}");
     }
 }
 
@@ -66,7 +66,7 @@ fn handle_move_input(
     }
 }
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Clone, PartialEq)]
 pub struct AI {
     name: String,
     pub weights: Weights,
@@ -80,6 +80,14 @@ impl Default for AI {
             weights: [1.0; NUM_HEURISTICS],
             limit: SearchLimit::default(),
         }
+    }
+}
+
+impl Debug for AI {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let fmt_struct = format!("{:.2?}", HeuristicWeights::new(self.weights));
+
+        f.write_str(&fmt_struct)
     }
 }
 

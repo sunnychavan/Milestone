@@ -975,7 +975,13 @@ pub fn normalize_weights(w: &mut Weights) {
 
 impl Debug for HeuristicWeights {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        f.debug_list().entries(self.weights).finish()
+        let mut fmt_struct = f.debug_struct("Weights");
+
+        for (heuristic_fn, w) in zip(self.functions.iter(), self.weights) {
+            fmt_struct.field(heuristic_fn.name(), &format!("{w:.2}"));
+        }
+
+        fmt_struct.finish()
     }
 }
 

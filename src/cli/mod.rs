@@ -136,13 +136,19 @@ pub fn play_game(mut game: State) {
 
     while game.active {
         game.play_one_turn();
+        info!("{game}");
     }
-
-    info!("{game}");
 }
 
 pub fn start_genetic_process() {
-    genetic::run();
+    let ai = genetic::run();
+    if env::var("PLAY_AFTER").is_ok() {
+        let g = GameBuilder::new()
+            .set_player_1(PossiblePlayer::Person(Person::default()))
+            .set_player_2(PossiblePlayer::AI(ai))
+            .build();
+        play_game(g);
+    }
 }
 
 pub fn choose_phase() {
