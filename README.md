@@ -27,3 +27,4 @@ TODO:
 - In addition, the following env vars can be set:
   - `LAUNCH_ARG`: corresponds to the number input at the beginning
   - `RUST_LOG`: the tracing directive for `env_logger` to use. Use `info` to only display info-level-logs and higher, or `trace` to display all
+  - `NUM_BATCHES`, `NUM_AGENTS_RETAINED`, `NUM_CHILDREN_PER_RETAINED_AGENT`, `PERTURB_AMT`, `NUM_AGENTS`, `NUM_MATCHES`, `AGENT_DEPTH`
