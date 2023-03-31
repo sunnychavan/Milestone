@@ -165,7 +165,7 @@ pub fn white_proximity(location: &usize) -> i64 {
     WHITE_PROXIMITY[*location]
 }
 
-pub fn black_proximity_row(location: usize) -> i64 {
+pub fn black_proximity_row(location: &usize) -> i64 {
     lazy_static! {
         static ref BLACK_PROXIMITY: [i64; 37] = {
             let mut black_proximity = [0; 37];
@@ -222,9 +222,9 @@ pub fn black_proximity_row(location: usize) -> i64 {
         };
     }
 
-    BLACK_PROXIMITY[location]
+    BLACK_PROXIMITY[*location]
 }
 
-pub fn white_proximity_row(location: usize) -> i64 {
+pub fn white_proximity_row(location: &usize) -> i64 {
     12 - black_proximity_row(location)
 }
