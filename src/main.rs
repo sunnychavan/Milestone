@@ -28,13 +28,6 @@ fn main() {
         .target(env_logger::Target::Stdout)
         .init();
 
-    let args: Vec<String> = env::args().collect();
-    if args.len() > 1 {
-        info!("Argument passed. Starting the genetic process");
-        cli::start_genetic_process()
-    } else {
-        cli::choose_phase()
-    }
     let url = "./src/database/example.sqlite3";
 
     let conn = Connection::open(url).unwrap();
@@ -66,5 +59,24 @@ fn main() {
     )
     .unwrap_or(0);
 
-    cli::choose_phase()
+    // Create a table called `recovery_table`
+    conn.execute(
+        r#"
+        CREATE TABLE IF NOT EXISTS recovery_table (
+            generation_id INTEGER,
+            agents INTEGER,
+            timestamp INTEGER
+        )
+        "#,
+        [],
+    )
+    .unwrap_or(0);
+
+    let args: Vec<String> = env::args().collect();
+    if args.len() > 1 {
+        info!("Argument passed. Starting the genetic process");
+        cli::start_genetic_process()
+    } else {
+        cli::choose_phase()
+    }
 }
