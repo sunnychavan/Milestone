@@ -8,6 +8,8 @@ use crate::game::{
     player::{PossiblePlayer, AI},
 };
 
+use rusqlite::{params, Connection, Error, Result};
+
 use super::emperor::{NUM_AGENTS, NUM_MATCHES};
 use std::time::Instant;
 use std::{collections::HashSet, iter::zip};
@@ -147,6 +149,20 @@ impl Referee {
 
     pub fn get_agents_with_results(self) -> Vec<(Score, AI)> {
         zip(self.results, self.agents).collect::<Vec<(Score, AI)>>()
+    }
+
+    pub fn push_batch(&self) -> Result<()> {
+        let url = "./src/database/example.sqlite3";
+        let mut conn =
+            Connection::open(url).unwrap();
+        conn.execute(
+            r#"
+            INSERT INTO recovery_table (agents, timestamp)
+            VALUES (?, ?)
+            "#,
+            [1,2],
+        )?;
+        Ok(())
     }
 }
 

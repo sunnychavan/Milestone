@@ -63,7 +63,7 @@ fn main() {
     conn.execute(
         r#"
         CREATE TABLE IF NOT EXISTS recovery_table (
-            generation_id INTEGER,
+            batch_id INTEGER PRIMARY KEY,
             agents INTEGER,
             timestamp INTEGER
         )

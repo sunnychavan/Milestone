@@ -74,10 +74,13 @@ lazy_static! {
 
 pub fn run() -> AI {
     let mut prev_batch = initial_batch();
+    // prev_batch.push_batch().unwrap();
     let mut batch_num = 1;
 
     while batch_num <= *NUM_BATCHES {
+        prev_batch.push_batch().unwrap();
         prev_batch = run_one_batch(prev_batch);
+        // prev_batch.push_batch().unwrap();
         batch_num += 1
     }
     get_best_agents(prev_batch).first().unwrap().to_owned()

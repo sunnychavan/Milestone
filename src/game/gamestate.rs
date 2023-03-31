@@ -311,8 +311,9 @@ impl State {
     }
 
     pub fn push_game_and_state(&self) -> Result<()> {
+        let url = "./src/database/example.sqlite3";
         let mut conn =
-            Connection::open("./src/database/example.sqlite3").unwrap();
+            Connection::open(url).unwrap();
         let game_id = self.push_game(&mut conn).unwrap();
         self.push_game_state_history(&mut conn, game_id).unwrap();
         Ok(())
