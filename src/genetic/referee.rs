@@ -1,12 +1,16 @@
-use log::{debug, info, trace};
+use log::{debug, info};
 use rand::seq::SliceRandom;
 use rand::{thread_rng, Rng};
 use rayon::prelude::*;
+
+
 
 use crate::game::{
     gamestate::{GameBuilder, State},
     player::{PossiblePlayer, AI},
 };
+
+
 
 use super::emperor::{NUM_AGENTS, NUM_MATCHES};
 use std::time::Instant;
@@ -139,13 +143,17 @@ impl Referee {
     fn play_one_game(mut game: State) -> Option<u8> {
         while game.active {
             game.play_one_turn();
+            game.add_to_state_history();
         }
+        game.push_game_and_state().unwrap();
         game.winner
     }
 
     pub fn get_agents_with_results(self) -> Vec<(Score, AI)> {
         zip(self.results, self.agents).collect::<Vec<(Score, AI)>>()
     }
+
+    
 }
 
 fn factorial(n: usize) -> usize {

@@ -6,7 +6,7 @@ use crate::genetic;
 use crate::game::player::PossiblePlayer;
 
 use crate::game::player::{Person, AI};
-use log::{info, trace};
+use log::{info};
 use std::{env, io};
 
 #[derive(PartialEq)]
@@ -137,7 +137,9 @@ pub fn play_game(mut game: State) {
     while game.active {
         game.play_one_turn();
         info!("{game}");
+        // game.add_to_state_history();
     }
+    // game.push_game_and_state().unwrap();
 }
 
 pub fn start_genetic_process() {

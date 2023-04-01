@@ -3,3 +3,4 @@
 input.dot
 output.svg
 flamegraph.svg
+*.sqlite3
