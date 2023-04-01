@@ -10,6 +10,7 @@ use super::gamestate::State;
 use core::fmt::Debug;
 
 use log::{info, trace};
+use serde::{Serialize, Deserialize};
 use std::{fmt, io};
 
 #[derive(Debug, Clone, Default, PartialEq)]
@@ -66,7 +67,7 @@ fn handle_move_input(
     }
 }
 
-#[derive(Clone, PartialEq)]
+#[derive(Clone, PartialEq, Serialize, Deserialize)]
 pub struct AI {
     name: String,
     pub weights: Weights,

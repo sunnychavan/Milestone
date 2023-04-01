@@ -14,6 +14,8 @@ use std::{
     fmt::{self},
     result,
 };
+use crate::DATABASE_URL;
+
 
 #[derive(Default)]
 pub struct GameBuilder {
@@ -313,7 +315,7 @@ impl State {
     pub fn push_game_and_state(&self) -> Result<()> {
         let url = "./src/database/example.sqlite3";
         let mut conn =
-            Connection::open(url).unwrap();
+            Connection::open(&*DATABASE_URL).unwrap();
         let game_id = self.push_game(&mut conn).unwrap();
         self.push_game_state_history(&mut conn, game_id).unwrap();
         Ok(())
@@ -349,25 +351,4 @@ impl State {
         }
         tx.commit()
     }
-
-    // pub fn push_game_state_string(
-    //     &self,
-    //     tx: Transaction,
-    //     move_number: u32,
-    //     state: String,
-    //     game_id: i64,
-    // ) -> Result<()> {
-    //     // connection path assume code running in "Milestone-Rust" directory
-    //     // let pool = SqlitePool::connect("sqlite:./src/database/example.sqlite3").await?;
-
-    //     tx.execute(
-    //         r#"
-    //         INSERT INTO state_table (state, game_id, move_number)
-    //         VALUES (?1, ?2, ?3)
-    //         "#,
-    //         params![state, game_id, move_number],
-    //     )?;
-
-    //     Ok(())
-    // }
 }

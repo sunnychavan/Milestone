@@ -7,14 +7,10 @@ use dotenv::dotenv;
 use env_logger;
 use log::info;
 use std::{env, io::Stdout};
-
-#[derive(Debug)]
-struct StateTest {
-    id: i32,
-    state: String,
-}
+use lazy_static::lazy_static;
 
 use rusqlite::Connection;
+use milestone::DATABASE_URL;
 
 #[allow(dead_code)]
 fn main() {
@@ -28,9 +24,7 @@ fn main() {
         .target(env_logger::Target::Stdout)
         .init();
 
-    let url = "./src/database/example.sqlite3";
-
-    let conn = Connection::open(url).unwrap();
+    let conn = Connection::open(&*DATABASE_URL).unwrap();
 
     // Create a table called `game_table`
     conn.execute(
@@ -64,8 +58,8 @@ fn main() {
         r#"
         CREATE TABLE IF NOT EXISTS recovery_table (
             batch_id INTEGER PRIMARY KEY,
-            agents INTEGER,
-            timestamp INTEGER
+            agents BLOB,
+            timestamp DATETIME
         )
         "#,
         [],

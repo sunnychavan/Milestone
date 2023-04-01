@@ -1,13 +1,14 @@
-use std::env;
+use std::{env, time::{Instant, SystemTime}};
 
 use lazy_static::lazy_static;
-use log::{debug, info};
+use log::{debug, info, warn};
 use rand::{random, Rng};
-
-use crate::ai::heuristics::NUM_HEURISTICS;
+use rusqlite::{params, Connection, Error, Result};
+use crate::{ai::heuristics::NUM_HEURISTICS, DATABASE_URL};
 use crate::ai::tree::SearchLimit;
 use crate::game::player::AI;
-
+use bincode::{serialize, deserialize};
+use chrono::Utc;
 use super::referee::Referee;
 
 lazy_static! {
@@ -78,7 +79,6 @@ pub fn run() -> AI {
     let mut batch_num = 1;
 
     while batch_num <= *NUM_BATCHES {
-        prev_batch.push_batch().unwrap();
         prev_batch = run_one_batch(prev_batch);
         // prev_batch.push_batch().unwrap();
         batch_num += 1
@@ -102,6 +102,7 @@ fn run_one_batch(mut prev: Referee) -> Referee {
         prev.agents
     );
     prev.play();
+    push_batch(&prev).unwrap_or_else(|e| warn!("Could not push to recovery table: {e}"));
     let old_best_agents = get_best_agents(prev);
     info!("Batch #{old_batch_num} completed with best agents: {old_best_agents:#.3?}");
     let new_agents = mutate(old_best_agents);
@@ -172,4 +173,33 @@ fn mutate(previous_best: Vec<AI>) -> Vec<AI> {
     }
 
     new_gen
+}
+
+fn push_batch(prev: &Referee) -> Result<()> {
+    let conn =
+        Connection::open(&*DATABASE_URL).unwrap();
+    
+    let serialized_agents = serialize(&(prev.agents)).unwrap();
+    let timestamp = Utc::now().to_string();
+
+    conn.execute(
+        r#"
+        INSERT INTO recovery_table (agents, timestamp)
+        VALUES (?, ?)
+        "#,
+        params![serialized_agents, timestamp],
+    )?;
+
+    // let mut stmt = conn.prepare("SELECT agents FROM recovery_table")?;
+    // let agents_iter = stmt.query_map([], |row| {
+    //     let bin: Vec<u8> = row.get(0)?;
+    //     let agents: Vec<AI> = bincode::deserialize(&bin).unwrap();
+    //     Ok(agents)
+    // })?;
+
+    // for agents in agents_iter {
+    //     println!("Found list of agents: {:?}", agents.unwrap());
+    // }
+
+    Ok(())
 }

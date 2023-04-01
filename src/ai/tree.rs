@@ -4,6 +4,8 @@ use petgraph::graph::EdgeIndex;
 use petgraph::graph::NodeIndex;
 use petgraph::visit::EdgeRef;
 use separator::Separatable;
+use serde::Deserialize;
+use serde::Serialize;
 
 use std::fmt::Debug;
 use std::fs::File;
@@ -270,7 +272,7 @@ fn create_svg_from_file(dot_file: &str, svg_file: File) {
         .expect("failed to launch dot process");
 }
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub enum SearchLimit {
     Time(Duration),
     Depth(u8),

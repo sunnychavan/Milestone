@@ -3,6 +3,8 @@ use rand::seq::SliceRandom;
 use rand::{thread_rng, Rng};
 use rayon::prelude::*;
 
+
+
 use crate::game::{
     gamestate::{GameBuilder, State},
     player::{PossiblePlayer, AI},
@@ -151,19 +153,7 @@ impl Referee {
         zip(self.results, self.agents).collect::<Vec<(Score, AI)>>()
     }
 
-    pub fn push_batch(&self) -> Result<()> {
-        let url = "./src/database/example.sqlite3";
-        let mut conn =
-            Connection::open(url).unwrap();
-        conn.execute(
-            r#"
-            INSERT INTO recovery_table (agents, timestamp)
-            VALUES (?, ?)
-            "#,
-            [1,2],
-        )?;
-        Ok(())
-    }
+    
 }
 
 fn factorial(n: usize) -> usize {
