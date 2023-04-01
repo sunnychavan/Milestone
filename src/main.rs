@@ -4,10 +4,9 @@ pub mod game;
 pub mod genetic;
 
 use dotenv::dotenv;
-use env_logger;
 use log::info;
-use std::{env, io::Stdout};
-use lazy_static::lazy_static;
+use std::{env};
+
 
 use rusqlite::Connection;
 use milestone::DATABASE_URL;

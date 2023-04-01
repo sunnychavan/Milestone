@@ -6,7 +6,7 @@ use crate::genetic;
 use crate::game::player::PossiblePlayer;
 
 use crate::game::player::{Person, AI};
-use log::{info, trace};
+use log::{info};
 use std::{env, io};
 
 #[derive(PartialEq)]

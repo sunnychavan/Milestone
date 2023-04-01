@@ -1,9 +1,5 @@
 use lazy_static::lazy_static;
 
-pub fn location_agnostic(location: &usize) -> i64 {
-    *location as i64
-}
-
 pub fn centrality(location: &usize) -> i64 {
     lazy_static! {
         static ref CENTRALITY: [i64; 37] = {

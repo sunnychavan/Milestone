@@ -1,4 +1,4 @@
-use log::{debug, info, trace};
+use log::{debug, info};
 use rand::seq::SliceRandom;
 use rand::{thread_rng, Rng};
 use rayon::prelude::*;
@@ -10,7 +10,7 @@ use crate::game::{
     player::{PossiblePlayer, AI},
 };
 
-use rusqlite::{params, Connection, Error, Result};
+
 
 use super::emperor::{NUM_AGENTS, NUM_MATCHES};
 use std::time::Instant;

@@ -1,13 +1,13 @@
-use std::{env, time::{Instant, SystemTime}};
+use std::{env};
 
 use lazy_static::lazy_static;
 use log::{debug, info, warn};
-use rand::{random, Rng};
-use rusqlite::{params, Connection, Error, Result};
+use rand::{Rng};
+use rusqlite::{params, Connection, Result};
 use crate::{ai::heuristics::NUM_HEURISTICS, DATABASE_URL};
 use crate::ai::tree::SearchLimit;
 use crate::game::player::AI;
-use bincode::{serialize, deserialize};
+use bincode::{serialize};
 use chrono::Utc;
 use super::referee::Referee;
 

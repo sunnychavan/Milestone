@@ -9,7 +9,7 @@ use crate::ai::tree::get_best_move;
 use super::gamestate::State;
 use core::fmt::Debug;
 
-use log::{info, trace};
+use log::{trace};
 use serde::{Serialize, Deserialize};
 use std::{fmt, io};
 

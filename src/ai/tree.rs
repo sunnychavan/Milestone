@@ -1,6 +1,6 @@
 use petgraph::dot::Dot;
 use petgraph::graph::DiGraph;
-use petgraph::graph::EdgeIndex;
+
 use petgraph::graph::NodeIndex;
 use petgraph::visit::EdgeRef;
 use separator::Separatable;
@@ -12,7 +12,7 @@ use std::fs::File;
 use std::io::Write;
 use std::process::Command;
 use std::process::Stdio;
-use std::thread::current;
+
 use std::time::Instant;
 
 use std::iter::Iterator;

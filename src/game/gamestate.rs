@@ -9,10 +9,9 @@ use super::{
     player::PossiblePlayer,
     player::AI,
 };
-use rusqlite::{params, Connection, Error, Result};
+use rusqlite::{params, Connection, Result};
 use std::{
     fmt::{self},
-    result,
 };
 use crate::DATABASE_URL;
 
@@ -313,7 +312,7 @@ impl State {
     }
 
     pub fn push_game_and_state(&self) -> Result<()> {
-        let url = "./src/database/example.sqlite3";
+        let _url = "./src/database/example.sqlite3";
         let mut conn =
             Connection::open(&*DATABASE_URL).unwrap();
         let game_id = self.push_game(&mut conn).unwrap();
