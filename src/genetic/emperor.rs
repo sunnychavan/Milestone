@@ -181,13 +181,14 @@ fn push_batch(prev: &Referee) -> Result<()> {
     
     let serialized_agents = serialize(&(prev.agents)).unwrap();
     let timestamp = Utc::now().to_string();
+    let batch_id = prev.batch_num;
 
     conn.execute(
         r#"
-        INSERT INTO recovery_table (agents, timestamp)
-        VALUES (?, ?)
+        INSERT INTO recovery_table (batch_id, agents, timestamp)
+        VALUES (?, ?, ?)
         "#,
-        params![serialized_agents, timestamp],
+        params![batch_id, serialized_agents, timestamp],
     )?;
 
     // let mut stmt = conn.prepare("SELECT agents FROM recovery_table")?;
