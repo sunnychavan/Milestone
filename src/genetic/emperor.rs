@@ -6,10 +6,10 @@ use rand::{Rng};
 use rusqlite::{params, Connection, Result};
 use crate::{ai::heuristics::NUM_HEURISTICS, DATABASE_URL};
 use crate::ai::tree::SearchLimit;
-use crate::game::player::AI;
+use crate::game::player::{AI, Player};
 use bincode::{serialize};
 use chrono::Utc;
-use super::referee::Referee;
+use super::referee::{Referee, Score};
 
 lazy_static! {
     static ref NUM_BATCHES: usize =
@@ -179,7 +179,8 @@ fn push_batch(prev: &Referee) -> Result<()> {
     let conn =
         Connection::open(&*DATABASE_URL).unwrap();
     
-    let serialized_agents = serialize(&(prev.agents)).unwrap();
+    let agents_with_record: Vec<(&AI, &Score)> = prev.agents.iter().zip(prev.results.iter()).collect();
+    let serialized_agents_with_record = serialize(&(agents_with_record)).unwrap();
     let timestamp = Utc::now().to_string();
     let batch_id = prev.batch_num;
 
@@ -188,14 +189,14 @@ fn push_batch(prev: &Referee) -> Result<()> {
         INSERT INTO recovery_table (batch_id, agents, timestamp)
         VALUES (?, ?, ?)
         "#,
-        params![batch_id, serialized_agents, timestamp],
+        params![batch_id, serialized_agents_with_record, timestamp],
     )?;
 
     // let mut stmt = conn.prepare("SELECT agents FROM recovery_table")?;
     // let agents_iter = stmt.query_map([], |row| {
     //     let bin: Vec<u8> = row.get(0)?;
-    //     let agents: Vec<AI> = bincode::deserialize(&bin).unwrap();
-    //     Ok(agents)
+    //     let agents_with_record: Vec<(AI, Score)> = bincode::deserialize(&bin).unwrap();
+    //     Ok(agents_with_record)
     // })?;
 
     // for agents in agents_iter {

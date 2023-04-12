@@ -18,7 +18,7 @@ use std::{collections::HashSet, iter::zip};
 
 pub struct Referee {
     pub agents: Vec<AI>,
-    results: Vec<Score>,
+    pub results: Vec<Score>,
     pub batch_num: u32,
 }
 
@@ -142,8 +142,8 @@ impl Referee {
 
     fn play_one_game(mut game: State) -> Option<u8> {
         while game.active {
-            game.play_one_turn();
             game.add_to_state_history();
+            game.play_one_turn();
         }
         game.push_game_and_state().unwrap();
         game.winner
