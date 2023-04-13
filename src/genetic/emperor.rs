@@ -1,15 +1,15 @@
-use std::{env};
+use std::env;
 
-use lazy_static::lazy_static;
-use log::{debug, info, warn};
-use rand::{Rng};
-use rusqlite::{params, Connection, Result};
-use crate::{ai::heuristics::NUM_HEURISTICS, DATABASE_URL};
+use super::referee::Referee;
 use crate::ai::tree::SearchLimit;
 use crate::game::player::AI;
-use bincode::{serialize};
+use crate::{ai::heuristics::NUM_HEURISTICS, DATABASE_URL};
+use bincode::serialize;
 use chrono::Utc;
-use super::referee::Referee;
+use lazy_static::lazy_static;
+use log::{debug, info, warn};
+use rand::Rng;
+use rusqlite::{params, Connection, Result};
 
 lazy_static! {
     static ref NUM_BATCHES: usize =
@@ -73,26 +73,26 @@ lazy_static! {
         ));
 }
 
-pub fn run() -> AI {
-    let mut prev_batch = initial_batch();
-    // prev_batch.push_batch().unwrap();
-    let mut batch_num = 1;
+pub fn run(initial_batch_num: u32, initial_agents: Option<Vec<AI>>) -> AI {
+    let mut batch_num = initial_batch_num;
+    let agents = match initial_agents {
+        Some(i) => i,
+        None => {
+            let mut randomized_agents = vec![];
+            for _ in 0..*NUM_AGENTS {
+                randomized_agents.push(random_agent());
+            }
+            randomized_agents
+        }
+    };
+    let mut prev_batch = Referee::new(agents, batch_num);
 
-    while batch_num <= *NUM_BATCHES {
+    while batch_num as usize <= *NUM_BATCHES {
         prev_batch = run_one_batch(prev_batch);
         // prev_batch.push_batch().unwrap();
         batch_num += 1
     }
     get_best_agents(prev_batch).first().unwrap().to_owned()
-}
-
-fn initial_batch() -> Referee {
-    let mut agents = vec![];
-    for _ in 0..*NUM_AGENTS {
-        agents.push(random_agent());
-    }
-
-    Referee::new(agents, 1)
 }
 
 fn run_one_batch(mut prev: Referee) -> Referee {
@@ -102,7 +102,8 @@ fn run_one_batch(mut prev: Referee) -> Referee {
         prev.agents
     );
     prev.play();
-    push_batch(&prev).unwrap_or_else(|e| warn!("Could not push to recovery table: {e}"));
+    push_batch(&prev)
+        .unwrap_or_else(|e| warn!("Could not push to recovery table: {e}"));
     let old_best_agents = get_best_agents(prev);
     info!("Batch #{old_batch_num} completed with best agents: {old_best_agents:#.3?}");
     let new_agents = mutate(old_best_agents);
@@ -176,9 +177,8 @@ fn mutate(previous_best: Vec<AI>) -> Vec<AI> {
 }
 
 fn push_batch(prev: &Referee) -> Result<()> {
-    let conn =
-        Connection::open(&*DATABASE_URL).unwrap();
-    
+    let conn = Connection::open(&*DATABASE_URL).unwrap();
+
     let serialized_agents = serialize(&(prev.agents)).unwrap();
     let timestamp = Utc::now().to_string();
     let batch_id = prev.batch_num;

@@ -1,12 +1,13 @@
 use crate::ai::heuristics::NUM_HEURISTICS;
 use crate::ai::tree::SearchLimit;
 use crate::game::gamestate::{GameBuilder, State};
-use crate::genetic;
+use crate::{genetic, DATABASE_URL};
 
 use crate::game::player::PossiblePlayer;
 
 use crate::game::player::{Person, AI};
-use log::{info};
+use log::info;
+use rusqlite::Connection;
 use std::{env, io};
 
 #[derive(PartialEq)]
@@ -143,7 +144,38 @@ pub fn play_game(mut game: State) {
 }
 
 pub fn start_genetic_process() {
-    let ai = genetic::run();
+    let conn = Connection::open(&*DATABASE_URL).unwrap();
+    let mut stmt = conn
+        .prepare(
+            r#"
+            SELECT batch_id, agents FROM recovery_table
+            ORDER BY batch_id DESC LIMIT 1
+            "#,
+        )
+        .unwrap();
+    let mut batch_agents_iter = stmt
+        .query_map([], |row| {
+            let batch_num: u32 = row.get(0).unwrap();
+            let bin_agent: Vec<u8> = row.get(1).unwrap();
+            let agents: Vec<AI> = bincode::deserialize(&bin_agent).unwrap();
+            Ok((batch_num, agents))
+        })
+        .unwrap()
+        .peekable();
+
+    let ai = if batch_agents_iter.peek().is_none() {
+        // if no rows exist in recovery_table, start from scratch
+        info!("No rows found in the recovery table, initializing genetic algorithm...");
+        genetic::run(1, None)
+    } else {
+        // if rows exist, start from most recent agents
+        let found_batch = batch_agents_iter.next().unwrap();
+        let (batch_num, agents) = found_batch.unwrap();
+        info!("Found existing rows in recovery table, starting genetic algorithm from {batch_num}");
+
+        genetic::run(batch_num, Some(agents))
+    };
+
     if env::var("PLAY_AFTER").is_ok() {
         let g = GameBuilder::new()
             .set_player_1(PossiblePlayer::Person(Person::default()))
