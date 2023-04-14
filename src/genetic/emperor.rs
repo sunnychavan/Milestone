@@ -1,15 +1,16 @@
-use std::{env};
+use std::env;
 
-use lazy_static::lazy_static;
-use log::{debug, info, warn};
-use rand::{Rng};
-use rusqlite::{params, Connection, Result};
-use crate::{ai::heuristics::NUM_HEURISTICS, DATABASE_URL};
+use super::referee::{Referee, Score};
 use crate::ai::tree::SearchLimit;
 use crate::game::player::{AI, Player};
-use bincode::{serialize};
+use crate::{ai::heuristics::NUM_HEURISTICS, DATABASE_URL};
+use bincode::serialize;
 use chrono::Utc;
-use super::referee::{Referee, Score};
+use lazy_static::lazy_static;
+use log::{debug, info, warn};
+use rand::Rng;
+use rusqlite::{params, Connection, Result};
+
 
 lazy_static! {
     static ref NUM_BATCHES: usize =
@@ -37,13 +38,21 @@ lazy_static! {
               }
               _ => 2
             });
-    static ref PERTURB_AMT: f64 =
-        env::var("PERTURB_AMT").map_or(0.1, |elt| match elt.parse() {
+    static ref MAX_PERTURB_AMT: f64 =
+        env::var("MAX_PERTURB_AMT").map_or(0.1, |elt| match elt.parse() {
           Ok(i) => {
-            info!("Using PERTURB_AMT environment variable ({})", i);
+            info!("Using MAX_PERTURB_AMT environment variable ({})", i);
             i
           }
           _ => 0.1
+        });
+    static ref PERTURB_DECR: f64 =
+        env::var("PERTURB_DECR").map_or(0.1, |elt| match elt.parse() {
+          Ok(i) => {
+            info!("Using PERTURB_DECR environment variable ({})", i);
+            i
+          }
+          _ => 0.99
         });
     pub static ref NUM_AGENTS: usize =
         env::var("NUM_AGENTS").map_or(36, |elt| match elt.parse() {
@@ -73,26 +82,26 @@ lazy_static! {
         ));
 }
 
-pub fn run() -> AI {
-    let mut prev_batch = initial_batch();
-    // prev_batch.push_batch().unwrap();
-    let mut batch_num = 1;
+pub fn run(initial_batch_num: u32, initial_agents: Option<Vec<AI>>) -> AI {
+    let mut batch_num = initial_batch_num;
+    let agents = match initial_agents {
+        Some(i) => i,
+        None => {
+            let mut randomized_agents = vec![];
+            for _ in 0..*NUM_AGENTS {
+                randomized_agents.push(random_agent());
+            }
+            randomized_agents
+        }
+    };
+    let mut prev_batch = Referee::new(agents, batch_num);
 
-    while batch_num <= *NUM_BATCHES {
+    while batch_num as usize <= *NUM_BATCHES {
         prev_batch = run_one_batch(prev_batch);
         // prev_batch.push_batch().unwrap();
         batch_num += 1
     }
     get_best_agents(prev_batch).first().unwrap().to_owned()
-}
-
-fn initial_batch() -> Referee {
-    let mut agents = vec![];
-    for _ in 0..*NUM_AGENTS {
-        agents.push(random_agent());
-    }
-
-    Referee::new(agents, 1)
 }
 
 fn run_one_batch(mut prev: Referee) -> Referee {
@@ -102,10 +111,11 @@ fn run_one_batch(mut prev: Referee) -> Referee {
         prev.agents
     );
     prev.play();
-    push_batch(&prev).unwrap_or_else(|e| warn!("Could not push to recovery table: {e}"));
+    push_batch(&prev)
+        .unwrap_or_else(|e| warn!("Could not push to recovery table: {e}"));
     let old_best_agents = get_best_agents(prev);
     info!("Batch #{old_batch_num} completed with best agents: {old_best_agents:#.3?}");
-    let new_agents = mutate(old_best_agents);
+    let new_agents = mutate(old_best_agents, old_batch_num);
 
     Referee::new(new_agents, old_batch_num + 1)
 }
@@ -132,7 +142,7 @@ fn get_best_agents(r: Referee) -> Vec<AI> {
         .collect::<Vec<AI>>()
 }
 
-fn children_from_agent(parent: AI) -> Vec<AI> {
+fn children_from_agent(parent: AI, perturb_amt: f64) -> Vec<AI> {
     let mut children = vec![];
     let mut rng = rand::thread_rng();
 
@@ -140,7 +150,7 @@ fn children_from_agent(parent: AI) -> Vec<AI> {
         let mut child_weights = parent.weights.to_owned();
         for (idx, w) in child_weights.into_iter().enumerate() {
             child_weights[idx] =
-                w * rng.gen_range(1.0 - *PERTURB_AMT..1.0 + *PERTURB_AMT)
+                w * rng.gen_range(1.0 - perturb_amt..1.0 + perturb_amt)
         }
         children.push(AI::new(
             String::default(),
@@ -161,11 +171,13 @@ fn random_agent() -> AI {
     AI::new(String::default(), weights, AGENT_DEPTH.to_owned())
 }
 
-fn mutate(previous_best: Vec<AI>) -> Vec<AI> {
+fn mutate(previous_best: Vec<AI>, time: u32) -> Vec<AI> {
     let mut new_gen = vec![];
 
+    let perturb_amt = *MAX_PERTURB_AMT * PERTURB_DECR.powf((time - 1).into());
+    info!("Mutating children with {perturb_amt} perturbance");
     for previous_agent in previous_best.into_iter() {
-        new_gen.append(&mut children_from_agent(previous_agent));
+        new_gen.append(&mut children_from_agent(previous_agent, perturb_amt));
     }
 
     while new_gen.len() < *NUM_AGENTS {
