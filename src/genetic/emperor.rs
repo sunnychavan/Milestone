@@ -2,7 +2,7 @@ use std::env;
 
 use super::referee::{Referee, Score};
 use crate::ai::tree::SearchLimit;
-use crate::game::player::{AI, Player};
+use crate::game::player::{Player, AI};
 use crate::{ai::heuristics::NUM_HEURISTICS, DATABASE_URL};
 use bincode::serialize;
 use chrono::Utc;
@@ -10,7 +10,6 @@ use lazy_static::lazy_static;
 use log::{debug, info, warn};
 use rand::Rng;
 use rusqlite::{params, Connection, Result};
-
 
 lazy_static! {
     static ref NUM_BATCHES: usize =
@@ -129,12 +128,11 @@ fn checked_div(a: u32, b: u32) -> f32 {
 }
 
 fn get_best_agents(r: Referee) -> Vec<AI> {
-    let mut sorted_agents = r.get_agents_with_results();
-    sorted_agents.sort_by(|((w1, t1), _), ((w2, t2), _)| {
-        let p1 = checked_div(*w1, *t1);
-        let p2 = checked_div(*w2, *t2);
-        p2.partial_cmp(&p1).unwrap()
-    });
+    let mut sorted_agents = r.get_agents_with_elos();
+    sorted_agents.sort_by_key(|(elo, _ai)| *elo);
+
+    sorted_agents.reverse();
+
     sorted_agents
         .into_iter()
         .take(*NUM_AGENTS_RETAINED)
@@ -188,11 +186,12 @@ fn mutate(previous_best: Vec<AI>, time: u32) -> Vec<AI> {
 }
 
 fn push_batch(prev: &Referee) -> Result<()> {
-    let conn =
-        Connection::open(&*DATABASE_URL).unwrap();
-    
-    let agents_with_record: Vec<(&AI, &Score)> = prev.agents.iter().zip(prev.results.iter()).collect();
-    let serialized_agents_with_record = serialize(&(agents_with_record)).unwrap();
+    let conn = Connection::open(&*DATABASE_URL).unwrap();
+
+    let agents_with_record: Vec<(&AI, &i16)> =
+        prev.agents.iter().zip(prev.elos.iter()).collect();
+    let serialized_agents_with_record =
+        serialize(&(agents_with_record)).unwrap();
     let timestamp = Utc::now().to_string();
     let batch_id = prev.batch_num;
 
