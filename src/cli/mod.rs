@@ -1,6 +1,7 @@
 use crate::ai::heuristics::NUM_HEURISTICS;
 use crate::ai::tree::SearchLimit;
 use crate::game::gamestate::{GameBuilder, State};
+use crate::genetic::Score;
 use crate::{genetic, DATABASE_URL};
 
 use crate::game::player::PossiblePlayer;
@@ -157,7 +158,8 @@ pub fn start_genetic_process() {
         .query_map([], |row| {
             let batch_num: u32 = row.get(0).unwrap();
             let bin_agent: Vec<u8> = row.get(1).unwrap();
-            let agents: Vec<AI> = bincode::deserialize(&bin_agent).unwrap();
+            let agents_and_scores: Vec<(AI, Score)> = bincode::deserialize(&bin_agent).unwrap();
+            let agents = agents_and_scores.into_iter().map(|e| e.0).collect();
             Ok((batch_num, agents))
         })
         .unwrap()
