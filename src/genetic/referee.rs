@@ -175,17 +175,17 @@ fn update_elo(
     agent_one_wins: i16,
     adj_factor: i16,
 ) {
-    let base: i16 = 10;
+    let base: f32 = 10.0;
     let agent_one_elo = r.elos[*agent_one_idx];
     let agent_two_elo = r.elos[*agent_two_idx];
-    let agent_one_expected_wins = 2
-        / (1 + base
-            .pow(((agent_two_elo - agent_one_elo) / 400).try_into().unwrap()));
-    let agent_two_expected_wins = 2
-        / (1 + base
-            .pow(((agent_one_elo - agent_two_elo) / 400).try_into().unwrap()));
-    r.elos[*agent_one_idx] +=
-        adj_factor * (agent_one_wins - agent_one_expected_wins);
-    r.elos[*agent_two_idx] +=
-        adj_factor * (2 - agent_one_wins - agent_two_expected_wins);
+    let agent_one_expected_wins =
+        2.0 / (1.0 + base.powi((agent_two_elo - agent_one_elo / 400).into()));
+    let agent_two_expected_wins =
+        2.0 / (1.0 + base.powi((agent_one_elo - agent_two_elo / 400).into()));
+    r.elos[*agent_one_idx] += (adj_factor as f32
+        * (agent_one_wins as f32 - agent_one_expected_wins))
+        as i16;
+    r.elos[*agent_two_idx] += (adj_factor as f32
+        * (2.0 - agent_one_wins as f32 - agent_two_expected_wins))
+        as i16;
 }
