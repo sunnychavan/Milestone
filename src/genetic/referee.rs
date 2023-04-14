@@ -3,14 +3,10 @@ use rand::seq::SliceRandom;
 use rand::{thread_rng, Rng};
 use rayon::prelude::*;
 
-
-
 use crate::game::{
     gamestate::{GameBuilder, State},
     player::{PossiblePlayer, AI},
 };
-
-
 
 use super::emperor::{NUM_AGENTS, NUM_MATCHES};
 use std::time::Instant;
@@ -18,7 +14,8 @@ use std::{collections::HashSet, iter::zip};
 
 pub struct Referee {
     pub agents: Vec<AI>,
-    pub results: Vec<Score>,
+    results: Vec<Score>,
+    pub elos: Vec<i16>,
     pub batch_num: u32,
 }
 
@@ -29,6 +26,7 @@ impl Referee {
         Referee {
             agents,
             results: vec![(0, 0); *NUM_AGENTS],
+            elos: vec![1000; *NUM_AGENTS],
             batch_num,
         }
     }
@@ -75,19 +73,20 @@ impl Referee {
         let matches = Vec::from_iter(self.generate_matches());
 
         info!("Playing games in batch #{}", self.batch_num);
-        let results: Vec<(usize, u8, usize, u8)> = matches
-            .into_par_iter()
+        let results: Vec<(&usize, u8, &usize, u8)> = matches
+            .par_iter()
             .map(|(agent_one_idx, agent_two_idx)| {
                 let before = Instant::now();
                 let (agent_one_wins, agent_two_wins) = Self::play_one_match(
-                    &self.agents[agent_one_idx],
-                    &self.agents[agent_two_idx],
+                    &self.agents[*agent_one_idx],
+                    &self.agents[*agent_two_idx],
                 );
                 debug!(
-                    "Played a match between {} and {} in {:.2?}. (Batch {})",
+                    "Played a match between {} and {} in {:.2?}, {:?} is the result. (Batch {})",
                     agent_one_idx,
                     agent_two_idx,
                     before.elapsed(),
+                    (agent_one_wins, agent_two_wins),
                     self.batch_num,
                 );
 
@@ -96,10 +95,11 @@ impl Referee {
             .collect();
 
         for (a1_idx, a1_w, a2_idx, a2_w) in results {
-            self.results[a1_idx].0 += a1_w as u32;
-            self.results[a1_idx].1 += 2;
-            self.results[a2_idx].0 += a2_w as u32;
-            self.results[a2_idx].1 += 2;
+            self.results[*a1_idx].0 += a1_w as u32;
+            self.results[*a1_idx].1 += 2;
+            self.results[*a2_idx].0 += a2_w as u32;
+            self.results[*a2_idx].1 += 2;
+            update_elo(self, a1_idx, a2_idx, i16::try_from(a1_w).unwrap(), 30);
         }
 
         debug!(
@@ -110,6 +110,8 @@ impl Referee {
                 .enumerate()
                 .collect::<Vec<(usize, &Score)>>()
         );
+
+        debug!("Elos of batch {}: {:?}", self.batch_num, self.elos);
     }
 
     fn play_one_match(agent_one: &AI, agent_two: &AI) -> (u8, u8) {
@@ -122,8 +124,8 @@ impl Referee {
             .set_player_2(PossiblePlayer::AI(agent_one.to_owned()))
             .build();
 
-        let mut agent_one_wins = 0;
-        let mut agent_two_wins = 0;
+        let mut agent_one_wins: u8 = 0;
+        let mut agent_two_wins: u8 = 0;
         match Self::play_one_game(game_one) {
             Some(0) => agent_one_wins += 1,
             Some(1) => agent_two_wins += 1,
@@ -153,7 +155,9 @@ impl Referee {
         zip(self.results, self.agents).collect::<Vec<(Score, AI)>>()
     }
 
-    
+    pub fn get_agents_with_elos(self) -> Vec<(i16, AI)> {
+        zip(self.elos, self.agents).collect::<Vec<(i16, AI)>>()
+    }
 }
 
 fn factorial(n: usize) -> usize {
@@ -162,4 +166,26 @@ fn factorial(n: usize) -> usize {
 
 fn n_choose_r(n: usize, r: usize) -> usize {
     (n - r + 1..=n).product::<usize>() / factorial(r)
+}
+
+fn update_elo(
+    r: &mut Referee,
+    agent_one_idx: &usize,
+    agent_two_idx: &usize,
+    agent_one_wins: i16,
+    adj_factor: i16,
+) {
+    let base: i16 = 10;
+    let agent_one_elo = r.elos[*agent_one_idx];
+    let agent_two_elo = r.elos[*agent_two_idx];
+    let agent_one_expected_wins = 2
+        / (1 + base
+            .pow(((agent_two_elo - agent_one_elo) / 400).try_into().unwrap()));
+    let agent_two_expected_wins = 2
+        / (1 + base
+            .pow(((agent_one_elo - agent_two_elo) / 400).try_into().unwrap()));
+    r.elos[*agent_one_idx] +=
+        adj_factor * (agent_one_wins - agent_one_expected_wins);
+    r.elos[*agent_two_idx] +=
+        adj_factor * (2 - agent_one_wins - agent_two_expected_wins);
 }
