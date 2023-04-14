@@ -47,7 +47,7 @@ impl GameBuilder {
             current_turn: 0,
             board: self.board.to_owned(),
             players: self.players,
-            state_history: vec![self.board.to_repr_string()],
+            state_history: vec![],
         }
     }
 }
@@ -256,7 +256,7 @@ impl State {
     }
 
     pub fn add_to_state_history(&mut self) {
-        self.state_history.push(self.board.to_repr_string())
+        self.state_history.push(self.to_repr_string())
     }
 
     #[allow(clippy::result_unit_err)]
@@ -312,7 +312,6 @@ impl State {
     }
 
     pub fn push_game_and_state(&self) -> Result<()> {
-        let _url = "./src/database/example.sqlite3";
         let mut conn =
             Connection::open(&*DATABASE_URL).unwrap();
         let game_id = self.push_game(&mut conn).unwrap();
