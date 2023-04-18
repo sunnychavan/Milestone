@@ -1,8 +1,8 @@
 use std::env;
 
-use super::referee::{Referee};
+use super::referee::Referee;
 use crate::ai::tree::SearchLimit;
-use crate::game::player::{AI};
+use crate::game::player::AI;
 use crate::{ai::heuristics::NUM_HEURISTICS, DATABASE_URL};
 use bincode::serialize;
 use chrono::Utc;
@@ -12,14 +12,22 @@ use rand::Rng;
 use rusqlite::{params, Connection, Result};
 
 lazy_static! {
-    static ref NUM_BATCHES: usize =
-        env::var("NUM_BATCHES").map_or(10, |elt| match elt.parse() {
+    static ref PER_NUM_BATCHES: usize =
+        env::var("PER_NUM_BATCHES").map_or(10, |elt| match elt.parse() {
             Ok(i) => {
-                info!("Using NUM_BATCHES environment variable ({})", i);
+                info!("Using PER_NUM_BATCHES environment variable ({})", i);
                 i
             }
             _ => 10,
         });
+    static ref TOTAL_NUM_BATCHES: usize =
+    env::var("TOTAL_NUM_BATCHES").map_or(100, |elt| match elt.parse() {
+        Ok(i) => {
+            info!("Using TOTAL_NUM_BATCHES environment variable ({})", i);
+            i
+        }
+        _ => 100,
+    });
     static ref NUM_AGENTS_RETAINED: usize = env::var("NUM_AGENTS_RETAINED")
         .map_or(10, |elt| match elt.parse() {
           Ok(i) => {
@@ -82,7 +90,8 @@ lazy_static! {
 }
 
 pub fn run(initial_batch_num: u32, initial_agents: Option<Vec<AI>>) -> AI {
-    let mut batch_num = initial_batch_num;
+    let mut total_batch_num = initial_batch_num;
+    let mut process_batch_num = 1;
     let agents = match initial_agents {
         Some(i) => i,
         None => {
@@ -93,12 +102,15 @@ pub fn run(initial_batch_num: u32, initial_agents: Option<Vec<AI>>) -> AI {
             randomized_agents
         }
     };
-    let mut prev_batch = Referee::new(agents, batch_num);
+    let mut prev_batch = Referee::new(agents, total_batch_num);
 
-    while batch_num as usize <= *NUM_BATCHES {
+    while total_batch_num as usize <= *TOTAL_NUM_BATCHES
+        && process_batch_num <= *PER_NUM_BATCHES
+    {
         prev_batch = run_one_batch(prev_batch);
         // prev_batch.push_batch().unwrap();
-        batch_num += 1
+        total_batch_num += 1;
+        process_batch_num += 1;
     }
     get_best_agents(prev_batch).first().unwrap().to_owned()
 }
@@ -106,8 +118,8 @@ pub fn run(initial_batch_num: u32, initial_agents: Option<Vec<AI>>) -> AI {
 fn run_one_batch(mut prev: Referee) -> Referee {
     let old_batch_num = prev.batch_num;
     debug!(
-        "Running batch #{old_batch_num} with agents: {:#.3?}",
-        prev.agents
+        "Running batch #{old_batch_num}/#{:?} with agents: {:#.3?}",
+        *TOTAL_NUM_BATCHES, prev.agents
     );
     prev.play();
     push_batch(&prev)
