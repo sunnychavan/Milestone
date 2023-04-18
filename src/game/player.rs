@@ -101,6 +101,18 @@ impl AI {
         }
     }
 
+    pub fn from_weights(name: String, vec_weights: Vec<f64>) -> AI{
+        let mut array_weights = [0.0; NUM_HEURISTICS];
+        for (i, w) in vec_weights.iter().enumerate(){
+            array_weights[i] = w.to_owned();
+        }
+        AI {
+            name,
+            weights: array_weights,
+            limit: SearchLimit::default(),
+        }
+    }
+
     pub fn new(name: String, weights: Weights, limit: SearchLimit) -> AI {
         normalize_weights(&mut weights.to_owned());
 
