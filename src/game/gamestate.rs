@@ -9,12 +9,9 @@ use super::{
     player::PossiblePlayer,
     player::AI,
 };
-use rusqlite::{params, Connection, Result};
-use std::{
-    fmt::{self},
-};
 use crate::DATABASE_URL;
-
+use rusqlite::{params, Connection, Result};
+use std::fmt::{self};
 
 #[derive(Default)]
 pub struct GameBuilder {
@@ -312,8 +309,7 @@ impl State {
     }
 
     pub fn push_game_and_state(&self) -> Result<()> {
-        let mut conn =
-            Connection::open(&*DATABASE_URL).unwrap();
+        let mut conn = Connection::open(&*DATABASE_URL).unwrap();
         let game_id = self.push_game(&mut conn).unwrap();
         self.push_game_state_history(&mut conn, game_id).unwrap();
         Ok(())

@@ -13,11 +13,11 @@ use rusqlite::Connection;
 
 #[allow(dead_code)]
 fn main() {
-    info!("STARTING MILESTONE PROCESS AGAIN");
     dotenv().ok();
 
     // configure logger
     log4rs::init_file("log4rs_config.yaml", Default::default()).unwrap();
+    info!("STARTING MILESTONE PROCESS");
 
     let conn = Connection::open(&*DATABASE_URL).unwrap();
 
