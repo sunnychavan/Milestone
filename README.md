@@ -26,14 +26,21 @@ TODO:
   program to launch in genetic mode)
 - In addition, the following env vars can be set:
   - `LAUNCH_ARG`: corresponds to the number input at the beginning
-  - `RUST_LOG`: the tracing directive for `env_logger` to use. Use `info` to
-    only display info-level-logs and higher, or `trace` to display all
-  - `NUM_BATCHES`, `NUM_AGENTS_RETAINED`, `NUM_CHILDREN_PER_RETAINED_AGENT`,
-    `MAX_PERTURB_AMT`, `PERTURB_DECR`, `NUM_AGENTS`, `NUM_MATCHES`,
-    `AGENT_DEPTH`
+  - `PER_NUM_BATCHES`, `TOTAL_NUM_BATCHES`, `NUM_AGENTS_RETAINED`,
+    `NUM_CHILDREN_PER_RETAINED_AGENT`, `MAX_PERTURB_AMT`, `PERTURB_DECR`,
+    `NUM_AGENTS`, `NUM_MATCHES`, `AGENT_DEPTH`
   - `PLAY_AFTER` to toggle if a game is launched following the completion of the
-    genetic process
+    genetic process (currently the program only checks if this var exists, not
+    its value)
   - `DATABASE_URL` for the database URL
+
+## Running on Server
+
+This process can be launched via `./target/release/milestone` (after compiling),
+which can be done periodically using a cron job. For example, we can relaunch
+this process every two hours, and the recovery database will ensure that process
+is maintained. Logs will persist in the `logs/` directory and stderr can be
+piped to a file to debug any other issues with the process.
 
 ## Database
 
