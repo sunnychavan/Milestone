@@ -174,6 +174,7 @@ pub fn start_genetic_process() {
         // if rows exist, start from most recent agents
         let found_batch = batch_agents_iter.next().unwrap();
         let (batch_num, agents) = found_batch.unwrap();
+        drop(batch_agents_iter);
         info!("Found existing rows in recovery table, starting genetic algorithm from {batch_num}");
 
         genetic::run(batch_num, Some(agents))
