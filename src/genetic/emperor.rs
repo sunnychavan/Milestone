@@ -1,8 +1,8 @@
 use std::env;
 
-use super::referee::{Referee, Score};
+use super::referee::{Referee};
 use crate::ai::tree::SearchLimit;
-use crate::game::player::{Player, AI};
+use crate::game::player::{AI};
 use crate::{ai::heuristics::NUM_HEURISTICS, DATABASE_URL};
 use bincode::serialize;
 use chrono::Utc;

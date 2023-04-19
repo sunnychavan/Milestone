@@ -1,7 +1,7 @@
 use crate::ai::heuristics::NUM_HEURISTICS;
 use crate::ai::tree::SearchLimit;
 use crate::game::gamestate::{GameBuilder, State};
-use crate::genetic::Score;
+
 use crate::{genetic, DATABASE_URL};
 
 use crate::game::player::PossiblePlayer;
