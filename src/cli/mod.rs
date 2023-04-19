@@ -160,7 +160,8 @@ pub fn start_genetic_process() {
             let bin_agent: Vec<u8> = row.get(1).unwrap();
             let agents_and_scores: Vec<(AI, i16)> =
                 bincode::deserialize(&bin_agent).unwrap();
-            let agents = agents_and_scores.into_iter().map(|e| e.0).collect();
+            let agents: Vec<AI> =
+                agents_and_scores.into_iter().map(|e| e.0).collect();
             Ok((batch_num, agents))
         })
         .unwrap()
@@ -176,6 +177,7 @@ pub fn start_genetic_process() {
         let (batch_num, agents) = found_batch.unwrap();
         drop(batch_agents_iter);
         info!("Found existing rows in recovery table, starting genetic algorithm from {batch_num}");
+        info!("Repeated agents {:?}", agents);
 
         genetic::run(batch_num, Some(agents))
     };
