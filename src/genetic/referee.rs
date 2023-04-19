@@ -180,7 +180,9 @@ fn update_elo(
     let agent_two_elo = r.elos[*agent_two_idx];
     let agent_one_expected_wins =
         2.0 / (1.0 + base.powi(((agent_two_elo - agent_one_elo) / 400).into()));
-    let elo_adjustment_amt = (adj_factor as f32 * (agent_one_wins as f32 - agent_one_expected_wins)) as i16;
+    let elo_adjustment_amt = (adj_factor as f32
+        * (agent_one_wins as f32 - agent_one_expected_wins))
+        as i16;
     r.elos[*agent_one_idx] += elo_adjustment_amt;
     r.elos[*agent_two_idx] -= elo_adjustment_amt;
 }

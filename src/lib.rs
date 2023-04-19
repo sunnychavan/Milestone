@@ -7,6 +7,5 @@ pub mod game;
 pub mod genetic;
 
 lazy_static! {
-  pub static ref DATABASE_URL: String =
-      env::var("DATABASE_URL").unwrap();
+    pub static ref DATABASE_URL: String = env::var("DATABASE_URL").unwrap();
 }

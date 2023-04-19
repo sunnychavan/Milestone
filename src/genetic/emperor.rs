@@ -118,7 +118,7 @@ pub fn run(initial_batch_num: u32, initial_agents: Option<Vec<AI>>) -> AI {
 fn run_one_batch(mut prev: Referee) -> Referee {
     let old_batch_num = prev.batch_num;
     debug!(
-        "Running batch #{old_batch_num}/#{:?} with agents: {:#.3?}",
+        "Running batch #{old_batch_num}/{} with agents: {:#.3?}",
         *TOTAL_NUM_BATCHES, prev.agents
     );
     prev.play();
@@ -185,7 +185,10 @@ fn mutate(previous_best: Vec<AI>, time: u32) -> Vec<AI> {
     let mut new_gen = vec![];
 
     let perturb_amt = *MAX_PERTURB_AMT * PERTURB_DECR.powf((time - 1).into());
-    info!("Mutating children with {perturb_amt} perturbance");
+    info!(
+        "Mutating children with {:.2}% perturbance",
+        perturb_amt * 100.0
+    );
     for previous_agent in previous_best.into_iter() {
         new_gen.append(&mut children_from_agent(previous_agent, perturb_amt));
     }
@@ -227,4 +230,9 @@ fn push_batch(prev: &Referee) -> Result<()> {
     // }
 
     Ok(())
+}
+
+pub fn mutate_from_recovery(batch_num: u32, agents: Vec<AI>) -> Vec<AI> {
+    let best_agents = agents[0..*NUM_AGENTS_RETAINED].to_vec();
+    mutate(best_agents, batch_num)
 }
