@@ -59,7 +59,9 @@ fn main() {
         "#,
         [],
     )
-    .unwrap_or(0);
+    .unwrap_or(0); 
+
+    conn.close();
 
     let args: Vec<String> = env::args().collect();
     if args.len() > 1 {
