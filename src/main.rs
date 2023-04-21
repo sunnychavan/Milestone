@@ -5,23 +5,19 @@ pub mod genetic;
 
 use dotenv::dotenv;
 use log::info;
-use std::{env};
 
+use std::env;
 
-use rusqlite::Connection;
 use milestone::DATABASE_URL;
+use rusqlite::Connection;
 
 #[allow(dead_code)]
 fn main() {
     dotenv().ok();
 
     // configure logger
-    env_logger::builder()
-        .format_timestamp(None)
-        .format_target(false)
-        .format_module_path(false)
-        .target(env_logger::Target::Stdout)
-        .init();
+    log4rs::init_file("log4rs_config.yaml", Default::default()).unwrap();
+    info!("STARTING MILESTONE PROCESS");
 
     let conn = Connection::open(&*DATABASE_URL).unwrap();
 

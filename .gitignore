@@ -4,3 +4,6 @@ input.dot
 output.svg
 flamegraph.svg
 *.sqlite3*
+logs/*
+*.ipynb_checkpoints
+*.txt

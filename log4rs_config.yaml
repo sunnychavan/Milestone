@@ -1,0 +1,28 @@
+appenders:
+  my_stdout:
+    kind: console
+    filters:
+      - kind: threshold
+        level: info
+    encoder:
+      pattern: "{h({l})} {m}\n"
+  my_file_logger:
+    kind: rolling_file
+    path: logs/milestone.log
+    encoder:
+      pattern: "{h({d(%Y-%m-%d %H:%M)} | {l} |)} {m}\n"
+    policy:
+      trigger:
+        kind: size
+        limit: 25 mb
+      roller:
+        kind: fixed_window
+        pattern: logs/milestone_{}.gz
+        count: 25
+        base: 1
+
+root:
+  level: debug
+  appenders:
+    - my_stdout
+    - my_file_logger

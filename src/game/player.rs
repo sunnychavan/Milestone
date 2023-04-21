@@ -9,8 +9,8 @@ use crate::ai::tree::get_best_move;
 use super::gamestate::State;
 use core::fmt::Debug;
 
-use log::{trace};
-use serde::{Serialize, Deserialize};
+use log::trace;
+use serde::{Deserialize, Serialize};
 use std::{fmt, io};
 
 #[derive(Debug, Clone, Default, PartialEq)]
