@@ -20,6 +20,8 @@ enum GameType {
     AIs,
     String,
     Genetic,
+    BlackWeights,
+    WhiteWeights,
 }
 
 fn get_gametype_from_user() -> GameType {
@@ -29,6 +31,8 @@ fn get_gametype_from_user() -> GameType {
                \n\t(3) to play against another human,\
                \n\t(4) to have two AIs play each other\
                \n\t(5) to load from a string, or\
+               \n\t(6) to play as white vs a black AI with inputted weights, or\
+               \n\t(7) to play as black vs a white AI with inputted weights, or\
                \n\t(0) to launch the genetic algorithm."
     );
 
@@ -56,6 +60,8 @@ fn get_gametype_from_string(g: &str) -> Option<GameType> {
         "3" => Some(GameType::Humans),
         "4" => Some(GameType::AIs),
         "5" => Some(GameType::String),
+        "6" => Some(GameType::BlackWeights),
+        "7" => Some(GameType::WhiteWeights),
         "0" => Some(GameType::Genetic),
         _ => None,
     }
@@ -127,6 +133,27 @@ fn get_game_from_gametype(game_type: GameType) -> State {
                     get_game_from_gametype(GameType::String)
                 }
             }
+        }
+        GameType::BlackWeights => {
+            // game as white vs Black AI with inputted weights
+            let player_name = get_name_from_user("yourself");
+            let ai_weights = get_weights_from_user();
+
+
+            gb.set_player_1(PossiblePlayer::AI(AI::from_weights("AI".to_string(), ai_weights)))
+              .set_player_2(PossiblePlayer::Person(Person::new(player_name)))
+              .build()
+        }, 
+        GameType::WhiteWeights => {
+            // game as black vs White AI with inputted weights
+            let player_name = get_name_from_user("yourself");
+            let ai_weights = get_weights_from_user();
+            
+            gb.set_player_1(PossiblePlayer::Person(Person::new(player_name)))
+                .set_player_2(PossiblePlayer::AI(AI::from_weights("AI".to_string(), ai_weights)))
+                .build()
+
+            
         }
         _ => {
             panic!("invalid game type");
@@ -231,6 +258,27 @@ pub fn get_name_from_user(label: &str) -> String {
         Err(e) => {
             println!("Oops. Something went wrong ({e}), please try again");
             get_name_from_user(label)
+        }
+    }
+}
+
+pub fn get_weights_from_user() -> Vec<f64> {
+    println!("Please input {NUM_HEURISTICS} Weights for the AI:");
+
+    let mut input = String::new();
+    match io::stdin().read_line(&mut input) {
+        Ok(_) => {
+            let arr: Vec<f64> = input.split_whitespace().map(|x| x.parse().unwrap()).collect();
+            match arr.len() {
+                NUM_HEURISTICS => arr,
+                _ => {
+                    println!("Oops. You do not have the correct number of weights");
+                    get_weights_from_user()}
+            }
+        },
+        Err(e) => {
+            println!("Oops. Something went wrong ({e}), please try again");
+            get_weights_from_user()
         }
     }
 }
