@@ -179,6 +179,9 @@ impl NN {
             path.push(nn_folder_path);
             sys.setattr("path", path)?;
 
+            let np = PyModule::import(py, "numpy").expect("Failed to import numpy");
+            let pd = PyModule::import(py, "pandas").expect("Failed to import pandas");
+            let jl = PyModule::import(py, "joblib").expect("Failed to import joblib");
             // import neural_network python file
             let module = py.import(nn_file_name)?;
 
@@ -217,13 +220,16 @@ impl Player for NN {
             .map(|e| NN::run_python_nn(&e).unwrap())
             .collect();
 
-        let max_index_move = next_state_nn_black_score
+        let (max_index_move, max_value) = next_state_nn_black_score
             .iter()
             .enumerate()
             .max_by_key(|&(_, value)| OrderedFloat(*value))
-            .map(|(index, _)| index);
+            .map(|(index, value)| (index,*value)).unwrap();
 
-        let best_nn_move = next_move_vec[max_index_move.unwrap()];
+        // print!("HERE ARE THE VALUES");
+        // println!("{:?}", max_index_move);
+        // println!("{:?}", max_value);
+        let best_nn_move = next_move_vec[max_index_move];
 
         match best_nn_move {
             Straight(origin, dest) | Diagonal(origin, dest) => state
