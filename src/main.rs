@@ -59,7 +59,7 @@ fn main() {
         "#,
         [],
     )
-    .unwrap_or(0); 
+    .unwrap_or(0);
 
     conn.close();
 

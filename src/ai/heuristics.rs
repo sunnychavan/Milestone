@@ -70,7 +70,6 @@ pub const NUM_HEURISTICS: usize = 19;
 //     }
 //     }
 
-
 #[enum_dispatch(Heuristics)]
 trait Heuristic {
     fn score(&self, state: &State) -> i64;
