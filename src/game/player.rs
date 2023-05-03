@@ -217,39 +217,50 @@ impl Player for NN {
 
         let next_state_nn_black_score: Vec<f64> = string_next_state_repr_vec
             .into_iter()
-            .map(|e| NN::run_python_nn(&e).unwrap())
+            .map(|e| 
+                {
+
+                    match e.is_empty() {
+                        false => NN::run_python_nn(&e).unwrap(),
+                        true => {
+                            match state.current_turn {
+                                0 => 1.0,
+                                1 => 0.0,
+                                _ => panic!("The current turn is a value other than 0 or 1."),
+                        }
+                    }
+                }
+            })
             .collect();
 
-        let (max_index_move, max_value) = next_state_nn_black_score
+        // let (max_index_move, max_value) = next_state_nn_black_score
+        //     .iter()
+        //     .enumerate()
+        //     .max_by_key(|&(_, value)| OrderedFloat(*value))
+        //     .map(|(index, value)| (index,*value)).unwrap();
+
+        let enumerable_state_score = next_state_nn_black_score
             .iter()
-            .enumerate()
-            .max_by_key(|&(_, value)| OrderedFloat(*value))
-            .map(|(index, value)| (index,*value)).unwrap();
+            .enumerate();
+
+        let (best_index_move, best_value) = match state.current_turn {
+            0 => {enumerable_state_score.max_by_key(|&(_, value)| OrderedFloat(*value))
+            .map(|(index, value)| (index,*value)).unwrap()},
+            1 => {enumerable_state_score.min_by_key(|&(_, value)| OrderedFloat(*value))
+            .map(|(index, value)| (index,*value)).unwrap()},
+            _ => panic!("The current turn is a value other than 0 or 1.")
+        };
 
         // print!("HERE ARE THE VALUES");
         // println!("{:?}", max_index_move);
         // println!("{:?}", max_value);
-        let best_nn_move = next_move_vec[max_index_move];
+        let best_nn_move = next_move_vec[best_index_move];
 
         match best_nn_move {
             Straight(origin, dest) | Diagonal(origin, dest) => state
                 .move_piece(origin, dest, true)
                 .expect("could not play the NN suggested move"),
         }
-
-        // for s in string_state_repr_vec{
-        //     NN::run_python_nn(&s).unwrap();
-        // }
-
-        /*
-            1) get all possible next moves -> Vec<Move>
-            2) mutate current state with each Move in the output from step 1 and
-            call to_string on this mutated state
-            3) save all the string reps of the states in Vec
-            4) For each string rep, feed through neural net
-            5) keep track of best string rep index which is the same index in Vec<Move>
-            6) select that move
-        */
     }
 }
 
