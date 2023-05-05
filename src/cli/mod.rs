@@ -5,7 +5,7 @@ use crate::game::gamestate::{GameBuilder, State};
 use crate::genetic::mutate_from_recovery;
 use crate::{genetic, DATABASE_URL};
 
-use crate::game::player::PossiblePlayer;
+use crate::game::player::{PossiblePlayer, NN};
 
 use crate::game::player::{Person, AI};
 use log::info;
@@ -22,6 +22,7 @@ enum GameType {
     Genetic,
     BlackWeights,
     WhiteWeights,
+    BlackNN,
 }
 
 fn get_gametype_from_user() -> GameType {
@@ -33,6 +34,7 @@ fn get_gametype_from_user() -> GameType {
                \n\t(5) to load from a string, or\
                \n\t(6) to play as white vs a black AI with inputted weights, or\
                \n\t(7) to play as black vs a white AI with inputted weights, or\
+               \n\t(8) to play as white vs a black NN, or\
                \n\t(0) to launch the genetic algorithm."
     );
 
@@ -62,6 +64,7 @@ fn get_gametype_from_string(g: &str) -> Option<GameType> {
         "5" => Some(GameType::String),
         "6" => Some(GameType::BlackWeights),
         "7" => Some(GameType::WhiteWeights),
+        "8" => Some(GameType::BlackNN),
         "0" => Some(GameType::Genetic),
         _ => None,
     }
@@ -139,21 +142,32 @@ fn get_game_from_gametype(game_type: GameType) -> State {
             let player_name = get_name_from_user("yourself");
             let ai_weights = get_weights_from_user();
 
-
-            gb.set_player_1(PossiblePlayer::AI(AI::from_weights("AI".to_string(), ai_weights)))
-              .set_player_2(PossiblePlayer::Person(Person::new(player_name)))
-              .build()
-        }, 
+            gb.set_player_1(PossiblePlayer::AI(AI::from_weights(
+                "AI".to_string(),
+                ai_weights,
+            )))
+            .set_player_2(PossiblePlayer::Person(Person::new(player_name)))
+            .build()
+        }
         GameType::WhiteWeights => {
             // game as black vs White AI with inputted weights
             let player_name = get_name_from_user("yourself");
             let ai_weights = get_weights_from_user();
-            
-            gb.set_player_1(PossiblePlayer::Person(Person::new(player_name)))
-                .set_player_2(PossiblePlayer::AI(AI::from_weights("AI".to_string(), ai_weights)))
-                .build()
 
-            
+            gb.set_player_1(PossiblePlayer::Person(Person::new(player_name)))
+                .set_player_2(PossiblePlayer::AI(AI::from_weights(
+                    "AI".to_string(),
+                    ai_weights,
+                )))
+                .build()
+        }
+        GameType::BlackNN => {
+            // game as white vs Black NN 
+            let player_name = get_name_from_user("yourself");
+
+            gb.set_player_1(PossiblePlayer::NN(NN::new("NN".to_string())))
+                .set_player_2(PossiblePlayer::Person(Person::new(player_name)))
+                .build()
         }
         _ => {
             panic!("invalid game type");
@@ -268,14 +282,20 @@ pub fn get_weights_from_user() -> Vec<f64> {
     let mut input = String::new();
     match io::stdin().read_line(&mut input) {
         Ok(_) => {
-            let arr: Vec<f64> = input.split_whitespace().map(|x| x.parse().unwrap()).collect();
+            let arr: Vec<f64> = input
+                .split_whitespace()
+                .map(|x| x.parse().unwrap())
+                .collect();
             match arr.len() {
                 NUM_HEURISTICS => arr,
                 _ => {
-                    println!("Oops. You do not have the correct number of weights");
-                    get_weights_from_user()}
+                    println!(
+                        "Oops. You do not have the correct number of weights"
+                    );
+                    get_weights_from_user()
+                }
             }
-        },
+        }
         Err(e) => {
             println!("Oops. Something went wrong ({e}), please try again");
             get_weights_from_user()
