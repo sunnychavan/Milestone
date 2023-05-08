@@ -1,13 +1,13 @@
 appenders:
   my_stdout:
     kind: console
-    filters:
-      - kind: threshold
-        level: info
     encoder:
       pattern: "{h({l})} {m}\n"
   my_file_logger:
     kind: rolling_file
+    filters:
+      - kind: threshold
+        level: info
     path: logs/milestone.log
     encoder:
       pattern: "{h({d(%Y-%m-%d %H:%M)} | {l} |)} {m}\n"
