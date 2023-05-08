@@ -8,9 +8,10 @@ use crate::ai::tree::get_best_move;
 
 use super::gamestate::State;
 use core::fmt::Debug;
+use std::path::Path;
 
 use log::trace;
-use pyo3::types::PyTuple;
+use pyo3::types::{PyString, PyTuple};
 use serde::{Deserialize, Serialize};
 use std::{fmt, io};
 
@@ -152,58 +153,50 @@ impl Player for AI {
 #[derive(Clone, Debug, PartialEq, Default)]
 pub struct NN {
     name: String,
+    path: String,
 }
 
 impl NN {
-    pub fn new(name: String) -> NN {
-        NN { name }
+    pub fn new(name: String, path: String) -> NN {
+        NN { name, path }
     }
+
     fn run_python_nn(state_string_repr: &str) -> PyResult<f64> {
-        // Initialize Python interpreter
-        let nn_folder = r"\neuralnet";
-        let nn_file_name = "neural_network";
+        let code_location = "neuralnet/neural_network.py";
+        let code = std::fs::read_to_string(code_location)?;
+
         pyo3::prepare_freethreaded_python();
         let black_score = Python::with_gil(|py| -> PyResult<f64> {
-            // retrieve OS
-            let os = py.import("os").unwrap();
+            let module = PyModule::from_code(
+                py,
+                &code,
+                "neural_network.py",
+                "neural_network.py",
+            )?;
 
-            // Call the getcwd() function to get the current directory
-            let current_dir = os.call_method0("getcwd").unwrap();
-            let nn_folder_path = current_dir.to_string() + nn_folder;
-
-            // retrieve sys
-            let sys = py.import("sys")?;
-
-            // push current directory path to sys path vec
-            let mut path = sys.getattr("path")?.extract::<Vec<String>>()?;
-            path.push(nn_folder_path);
-            sys.setattr("path", path)?;
-
-            let np = PyModule::import(py, "numpy").expect("Failed to import numpy");
-            let pd = PyModule::import(py, "pandas").expect("Failed to import pandas");
-            let jl = PyModule::import(py, "joblib").expect("Failed to import joblib");
-            // import neural_network python file
-            let module = py.import(nn_file_name)?;
-
-            // retrieve neural_network.py "run_nn" function
             let nn_function = module.getattr("run_nn")?;
-
-            // set arguments for "run_nn" function and call function
-            let args = PyTuple::new(py, &[state_string_repr.into_py(py)]);
-            let result = nn_function.call(args, None)?;
-
-            // Extract the returned string value from "run_nn" function
-            let returned_value = result.extract::<f64>()?;
-            Ok(returned_value)
+            let args = PyTuple::new(
+                py,
+                [
+                    PyString::new(py, state_string_repr),
+                    PyString::new(py, "neuralnet/nn.joblib"),
+                    // state_string_repr.into_py(py),
+                    // "neuralnet/nn.joblib".into_py(py),
+                ],
+            );
+            let result = nn_function.call(args, None)?.extract::<f64>()?;
+            Ok(result)
         });
+
         Ok(black_score.unwrap())
     }
 }
+
 impl Player for NN {
     fn name(&self) -> String {
         self.name.clone()
     }
-    
+
     fn one_turn(&self, state: &mut State) {
         let next_move_vec = state.current_possible_moves(state.current_turn);
         let mut string_next_state_repr_vec: Vec<String> = Vec::new();
@@ -224,7 +217,8 @@ impl Player for NN {
             .iter()
             .enumerate()
             .max_by_key(|&(_, value)| OrderedFloat(*value))
-            .map(|(index, value)| (index,*value)).unwrap();
+            .map(|(index, value)| (index, *value))
+            .unwrap();
 
         // print!("HERE ARE THE VALUES");
         // println!("{:?}", max_index_move);

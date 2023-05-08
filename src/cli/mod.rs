@@ -8,7 +8,7 @@ use crate::{genetic, DATABASE_URL};
 use crate::game::player::{PossiblePlayer, NN};
 
 use crate::game::player::{Person, AI};
-use log::info;
+use log::{debug, info};
 use rusqlite::Connection;
 use std::{env, io};
 
@@ -162,12 +162,15 @@ fn get_game_from_gametype(game_type: GameType) -> State {
                 .build()
         }
         GameType::BlackNN => {
-            // game as white vs Black NN 
+            // game as white vs Black NN
             let player_name = get_name_from_user("yourself");
 
-            gb.set_player_1(PossiblePlayer::NN(NN::new("NN".to_string())))
-                .set_player_2(PossiblePlayer::Person(Person::new(player_name)))
-                .build()
+            gb.set_player_1(PossiblePlayer::NN(NN::new(
+                "NN".to_string(),
+                "neuralnet/nn.joblib".to_string(),
+            )))
+            .set_player_2(PossiblePlayer::Person(Person::new(player_name)))
+            .build()
         }
         _ => {
             panic!("invalid game type");
@@ -175,12 +178,12 @@ fn get_game_from_gametype(game_type: GameType) -> State {
     }
 }
 
-pub fn play_game(mut game: State) {
-    info!("{game}");
+pub fn play_game(game: &mut State) {
+    debug!("{game}");
 
     while game.active {
         game.play_one_turn();
-        info!("{game}");
+        debug!("{game}");
         // game.add_to_state_history();
     }
     // game.push_game_and_state().unwrap();
@@ -236,11 +239,11 @@ pub fn start_genetic_process() {
     info!("Genetic process completed");
 
     if env::var("PLAY_AFTER").is_ok() {
-        let g = GameBuilder::new()
+        let mut g = GameBuilder::new()
             .set_player_1(PossiblePlayer::Person(Person::default()))
             .set_player_2(PossiblePlayer::AI(ai))
             .build();
-        play_game(g);
+        play_game(&mut g);
     }
 }
 
@@ -259,7 +262,7 @@ pub fn choose_phase() {
     if gametype == GameType::Genetic {
         start_genetic_process()
     } else {
-        play_game(get_game_from_gametype(gametype))
+        play_game(&mut get_game_from_gametype(gametype))
     }
 }
 

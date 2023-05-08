@@ -272,7 +272,7 @@ fn create_svg_from_file(dot_file: &str, svg_file: File) {
         .expect("failed to launch dot process");
 }
 
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Serialize, Deserialize)]
 pub enum SearchLimit {
     Time(Duration),
     Depth(u8),

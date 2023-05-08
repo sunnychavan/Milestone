@@ -77,7 +77,7 @@ lazy_static! {
           }
           _ => 108
         });
-    static ref AGENT_DEPTH: SearchLimit = env::var("AGENT_DEPTH")
+    pub static ref AGENT_DEPTH: SearchLimit = env::var("AGENT_DEPTH")
         .map_or(SearchLimit::Depth(4), |elt| SearchLimit::Depth(
             match elt.parse() {
               Ok(i) => {

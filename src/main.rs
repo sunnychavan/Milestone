@@ -3,7 +3,12 @@ pub mod cli;
 pub mod game;
 pub mod genetic;
 
+use cli::play_game;
 use dotenv::dotenv;
+use game::{
+    gamestate::{GameBuilder, State},
+    player::{PossiblePlayer, AI, NN},
+};
 use log::info;
 
 use std::env;
@@ -14,9 +19,23 @@ use rusqlite::Connection;
 #[allow(dead_code)]
 fn main() {
     dotenv().ok();
-
     // configure logger
     log4rs::init_file("log4rs_config.yaml", Default::default()).unwrap();
+
+    normal_milestone();
+
+    // evaluate_agents("data/exp2.agents", "data/exp2_agent_comparison.csv");
+    // evaluate_agents("data/exp3.agents", "data/exp3_agent_comparison.csv");
+
+    // evaluate_exps(
+    //     "data/exp2.best_agents",
+    //     "data/exp3.best_agents",
+    //     5,
+    //     "data/exp_comparison.csv",
+    // );
+}
+
+fn normal_milestone() {
     info!("STARTING MILESTONE PROCESS");
 
     let conn = Connection::open(&*DATABASE_URL).unwrap();

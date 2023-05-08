@@ -45,3 +45,13 @@ piped to a file to debug any other issues with the process.
 ## Database
 
 - Download VsCode Sqlite Extension (SQLite by alexcvzz)
+
+<!-- ## pyo3 & calling Rust from Python
+
+- After activating the venv (`source .venv/bin/activate`), run
+  `python3 -m maturin develop --release`
+- And then can execute the python file of choice -->
+
+## Exp 2 vs Exp 3
+
+- Best agents split the two game match

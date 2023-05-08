@@ -1,12 +1,11 @@
-def run_nn(state_repr):
-    import joblib
-    import numpy 
-    import pandas 
-    import sklearn
-    from sklearn.neural_network import MLPRegressor
+import joblib
+import numpy
+import pandas
+import sklearn
+from sklearn.neural_network import MLPRegressor
 
-
-    regr = joblib.load('neuralnet/nn.joblib')
+def run_nn(state_repr, regr_path):
+    regr = joblib.load(regr_path)
 
     state = []
     for i in state_repr[2:]:
@@ -25,4 +24,4 @@ def run_nn(state_repr):
 
 
 if __name__ == "__main__":
-    run_nn("b:b/bb/bbb/bbbb/3/4/3/4/3/wwww/www/ww/w")
+    run_nn("b:b/bb/bbb/bbbb/3/4/3/4/3/wwww/www/ww/w", "neuralnet/nn.joblib")
