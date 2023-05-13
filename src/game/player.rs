@@ -161,27 +161,21 @@ impl NN {
         NN { name, path }
     }
 
-    fn run_python_nn(state_string_repr: &str) -> PyResult<f64> {
-        let code_location = "neuralnet/neural_network.py";
+    fn run_python_nn(&self, state_string_repr: &str) -> PyResult<f64> {
+        let code_location = "neuralnet/predict.py";
         let code = std::fs::read_to_string(code_location)?;
 
         pyo3::prepare_freethreaded_python();
         let black_score = Python::with_gil(|py| -> PyResult<f64> {
-            let module = PyModule::from_code(
-                py,
-                &code,
-                "neural_network.py",
-                "neural_network.py",
-            )?;
+            let module =
+                PyModule::from_code(py, &code, "predict.py", "predict.py")?;
 
             let nn_function = module.getattr("run_nn")?;
             let args = PyTuple::new(
                 py,
                 [
                     PyString::new(py, state_string_repr),
-                    PyString::new(py, "neuralnet/nn.joblib"),
-                    // state_string_repr.into_py(py),
-                    // "neuralnet/nn.joblib".into_py(py),
+                    PyString::new(py, &self.path),
                 ],
             );
             let result = nn_function.call(args, None)?.extract::<f64>()?;
@@ -210,19 +204,15 @@ impl Player for NN {
 
         let next_state_nn_black_score: Vec<f64> = string_next_state_repr_vec
             .into_iter()
-            .map(|e| 
-                {
-
-                    match e.is_empty() {
-                        false => NN::run_python_nn(&e).unwrap(),
-                        true => {
-                            match state.current_turn {
-                                0 => 1.0,
-                                1 => 0.0,
-                                _ => panic!("The current turn is a value other than 0 or 1."),
-                        }
+            .map(|e| match e.is_empty() {
+                false => self.run_python_nn(&e).unwrap(),
+                true => match state.current_turn {
+                    0 => 1.0,
+                    1 => 0.0,
+                    _ => {
+                        panic!("The current turn is a value other than 0 or 1.")
                     }
-                }
+                },
             })
             .collect();
 
@@ -232,16 +222,19 @@ impl Player for NN {
         //     .max_by_key(|&(_, value)| OrderedFloat(*value))
         //     .map(|(index, value)| (index,*value)).unwrap();
 
-        let enumerable_state_score = next_state_nn_black_score
-            .iter()
-            .enumerate();
+        let enumerable_state_score =
+            next_state_nn_black_score.iter().enumerate();
 
         let (best_index_move, best_value) = match state.current_turn {
-            0 => {enumerable_state_score.max_by_key(|&(_, value)| OrderedFloat(*value))
-            .map(|(index, value)| (index,*value)).unwrap()},
-            1 => {enumerable_state_score.min_by_key(|&(_, value)| OrderedFloat(*value))
-            .map(|(index, value)| (index,*value)).unwrap()},
-            _ => panic!("The current turn is a value other than 0 or 1.")
+            0 => enumerable_state_score
+                .max_by_key(|&(_, value)| OrderedFloat(*value))
+                .map(|(index, value)| (index, *value))
+                .unwrap(),
+            1 => enumerable_state_score
+                .min_by_key(|&(_, value)| OrderedFloat(*value))
+                .map(|(index, value)| (index, *value))
+                .unwrap(),
+            _ => panic!("The current turn is a value other than 0 or 1."),
         };
 
         // print!("HERE ARE THE VALUES");

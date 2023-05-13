@@ -167,7 +167,7 @@ fn get_game_from_gametype(game_type: GameType) -> State {
 
             gb.set_player_1(PossiblePlayer::NN(NN::new(
                 "NN".to_string(),
-                "neuralnet/nn.joblib".to_string(),
+                "neuralnet/exp2.joblib".to_string(),
             )))
             .set_player_2(PossiblePlayer::Person(Person::new(player_name)))
             .build()
