@@ -22,7 +22,7 @@ fn main() {
     // configure logger
     log4rs::init_file("log4rs_config.yaml", Default::default()).unwrap();
 
-    // normal_milestone();
+    normal_milestone();
 
     // evaluate_agents("data/exp2.agents", "data/exp2_agent_comparison.csv");
     // evaluate_agents("data/exp3.agents", "data/exp3_agent_comparison.csv");
