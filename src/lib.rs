@@ -71,7 +71,7 @@ fn play_two_ai(weights_one: &String, weights_two: &String) -> u8 {
     g_one.winner.unwrap() + 1 - g_two.winner.unwrap()
 }
 
-fn play_two_nn(file_path_one: &String, file_path_two: &String) -> u8 {
+pub fn play_two_nn(file_path_one: &str, file_path_two: &str) -> u8 {
     let mut g_one = GameBuilder::new()
         .set_player_1(PossiblePlayer::NN(NN::new(
             "NN 1".to_string(),
@@ -99,7 +99,7 @@ fn play_two_nn(file_path_one: &String, file_path_two: &String) -> u8 {
     g_one.winner.unwrap() + 1 - g_two.winner.unwrap()
 }
 
-fn play_ai_vs_nn(weights: &String, file_path: &String, in_order: bool) -> u8 {
+pub fn play_ai_vs_nn(weights: &str, file_path: &str, in_order: bool) -> u8 {
     let (player_one, player_two) = if in_order {
         (
             PossiblePlayer::AI(AI::new(
