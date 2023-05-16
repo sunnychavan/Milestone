@@ -1,5 +1,6 @@
-use ai::tree::SearchLimit;
-use genetic::AGENT_DEPTH;
+use crate::ai::tree::SearchLimit;
+use crate::genetic::AGENT_DEPTH;
+use crate::play_two_ai;
 use lazy_static::lazy_static;
 use log::info;
 use pyo3::pyfunction;
@@ -15,11 +16,6 @@ use std::io;
 use std::io::BufRead;
 use std::io::Write;
 use std::path::Path;
-
-pub mod ai;
-pub mod cli;
-pub mod game;
-pub mod genetic;
 
 use crate::cli::play_game;
 use crate::game::gamestate::GameBuilder;
@@ -105,18 +101,21 @@ pub fn evaluate_exps(
     let result = (0..amt)
         .into_par_iter()
         .flat_map(|i| {
-            (0..amt).into_par_iter().map(move |j| {
-                let exp_one_weights = &exp_one_agents[i][1];
-                let exp_two_weights = &exp_two_agents[j][1];
-                info!("Playing between {i} and {j}");
-                let match_result =
-                    play_two_ai(exp_one_weights, exp_two_weights);
-                (
-                    exp_one_agents[i][0].to_owned(),
-                    exp_two_agents[j][0].to_owned(),
-                    match_result,
-                )
-            })
+            (0..amt)
+                .into_par_iter()
+                .map(move |j| {
+                    let exp_one_weights = &exp_one_agents[i][1];
+                    let exp_two_weights = &exp_two_agents[j][1];
+                    info!("Playing between {i} and {j}");
+                    let match_result =
+                        play_two_ai(exp_one_weights, exp_two_weights);
+                    (
+                        exp_one_agents[i][0].to_owned(),
+                        exp_two_agents[j][0].to_owned(),
+                        match_result,
+                    )
+                })
+                .collect::<Vec<(String, String, u8)>>()
         })
         .collect::<Vec<_>>();
 
