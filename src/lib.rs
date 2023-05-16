@@ -18,6 +18,7 @@ use std::path::Path;
 
 pub mod ai;
 pub mod cli;
+pub mod data;
 pub mod game;
 pub mod genetic;
 
@@ -68,7 +69,7 @@ fn play_two_ai(weights_one: &String, weights_two: &String) -> u8 {
 
     play_game(&mut g_one);
     play_game(&mut g_two);
-    g_one.winner.unwrap() + 1 - g_two.winner.unwrap()
+    2 - (g_one.winner.unwrap() + 1 - g_two.winner.unwrap())
 }
 
 pub fn play_two_nn(file_path_one: &str, file_path_two: &str) -> u8 {
@@ -96,7 +97,7 @@ pub fn play_two_nn(file_path_one: &str, file_path_two: &str) -> u8 {
 
     play_game(&mut g_one);
     play_game(&mut g_two);
-    g_one.winner.unwrap() + 1 - g_two.winner.unwrap()
+    2 - (g_one.winner.unwrap() + 1 - g_two.winner.unwrap())
 }
 
 pub fn play_ai_vs_nn(weights: &str, file_path: &str, in_order: bool) -> u8 {
@@ -138,7 +139,7 @@ pub fn play_ai_vs_nn(weights: &str, file_path: &str, in_order: bool) -> u8 {
 
     play_game(&mut g_one);
     play_game(&mut g_two);
-    g_one.winner.unwrap() + 1 - g_two.winner.unwrap()
+    2 - (g_one.winner.unwrap() + 1 - g_two.winner.unwrap())
 }
 
 fn floats_from_string(s: String) -> Vec<f64> {
