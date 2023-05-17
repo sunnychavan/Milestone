@@ -53,7 +53,7 @@ def add_elo_to_weights_dict(elo_list, weights_dict):
             value, elo_none = weights_dict[heur][weights_index]
             weights_dict[heur][weights_index] = (value, elo)
         weights_index -= 1
-    
+
     return weights_dict
 
 
@@ -65,18 +65,18 @@ def check_weights_errors(weights_dict, num_agents):
     if weights_dict[first_key][-1][1] is None:
         for heur in weight_dict_keys:
             weights_dict[heur] = weights_dict[heur][:-num_agents]
-    
+
     return weights_dict
 
 
-    
+
 
 # def read_log_file(filename):
 #     weights_dict = {}
-#     num_agents = None 
+#     num_agents = None
 #     pattern = r'\((\d+)\)'
 #     with open(filename, "r") as f:
-#         current_elo_list = None 
+#         current_elo_list = None
 #         for i, line in enumerate(f):
 #             # if i == 555:
 #             #     print("THIS IS I: " + str(i) + " THIS IS LINE: " + line)
@@ -87,24 +87,24 @@ def check_weights_errors(weights_dict, num_agents):
 #                     num_agents = int(match.group(1))
 #             elif "Running batch" in line:
 #                 for i in range(num_agents):
-#                     weights_dict =  add_heuristic_weights_no_elo(next(f).strip(), weights_dict)                                 
+#                     weights_dict =  add_heuristic_weights_no_elo(next(f).strip(), weights_dict)
 #             elif "Elos of batch" in line:
 #                 elos_str = line.split(": ")[1].strip()
 #                 current_elo_list = [int(x) for x in elos_str[1:-1].split(",")]
 #                 weights_dict = add_elo_to_weights_dict(current_elo_list, weights_dict)
-#                 # current_elo_list = sorted(elos_list, reverse=True)[:5]  
-            
-        
+#                 # current_elo_list = sorted(elos_list, reverse=True)[:5]
+
+
 #         return weights_dict
-    
+
 
 def read_log_file(filename):
     weights_dict = {}
-    num_agents = None 
+    num_agents = None
     pattern = r'\((\d+)\)'
-    prev = False 
+    prev = False
     with open(filename, "r") as f:
-        current_elo_list = None 
+        current_elo_list = None
         for i, line in enumerate(f):
             # if i == 553:
             #     print("THIS IS I: " + str(i) + " THIS IS LINE: " + line)
@@ -112,25 +112,25 @@ def read_log_file(filename):
             if 'Using NUM_AGENTS environment variable' in line:
                 match = re.search(pattern, line)
                 if match:
-                    num_agents = int(match.group(1)) 
+                    num_agents = int(match.group(1))
             elif "Running batch" in line:
-                prev = True 
+                prev = True
                 weights_dict = check_weights_errors(weights_dict, num_agents)
             elif "Weights {" in line and prev:
-                weights_dict =  add_heuristic_weights_no_elo(line.strip(), weights_dict)                                         
+                weights_dict =  add_heuristic_weights_no_elo(line.strip(), weights_dict)
             elif "Elos of batch" in line:
                 elos_str = line.split(": ")[1].strip()
                 current_elo_list = [int(x) for x in elos_str[1:-1].split(",")]
                 weights_dict = add_elo_to_weights_dict(current_elo_list, weights_dict)
-                prev = False 
-                # current_elo_list = sorted(elos_list, reverse=True)[:5]  
-            
-        
+                prev = False
+                # current_elo_list = sorted(elos_list, reverse=True)[:5]
+
+
         return weights_dict
-        
+
 
 def write_to_heuristic_data_files(weights_dict, data_path):
-    for heuristic in weights_dict:    
+    for heuristic in weights_dict:
         file_path = os.path.join(data_path, heuristic + ".txt")
         with open(file_path, 'w') as f:
               f.write("Heuristic_Value, Elo_Value \n")

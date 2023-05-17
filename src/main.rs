@@ -23,17 +23,17 @@ fn main() {
     // configure logger
     log4rs::init_file("log4rs_config.yaml", Default::default()).unwrap();
 
-    // normal_milestone();
+    normal_milestone();
 
     // evaluate_agents("data/exp2.agents", "data/exp2_agent_comparison.csv");
     // evaluate_agents("data/exp3.agents", "data/exp3_agent_comparison.csv");
 
-    evaluate_exps(
-        "data/exp_comparison/exp2.best_agents",
-        "data/exp_comparison/exp3.best_agents",
-        5,
-        "data/exp_comparison/exp_comparison.csv",
-    );
+    // evaluate_exps(
+    //     "data/exp_comparison/exp2.best_agents",
+    //     "data/exp_comparison/exp3.best_agents",
+    //     5,
+    //     "data/exp_comparison/exp_comparison.csv",
+    // );
 
     // exp 2
     // let result = play_ai_vs_nn("0.37 0.86 0.21 0.38 0.09 0.79 0.35 0.82 0.84 0.32 0.14 0.53 0.9 0.83 0.56 0.98 0.11 0.08 0.1", "neuralnet/exp2.joblib", true);
