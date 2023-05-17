@@ -74,12 +74,6 @@ impl GameTree {
             &[],
             &|_, _| "".to_owned(),
             &|_, _| "".to_owned(),
-            // &|_t, (_ni, gn)| {
-            //     format!(
-            //         "label = \"Heuristic: {:?}\"",
-            //         HeuristicWeights::new_with_state(&self.weights, &gn.state,)
-            //     )
-            // },
         );
         write!(file, "{dot:?}").expect("failed to write to input file");
     }

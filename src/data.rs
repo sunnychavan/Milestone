@@ -1,27 +1,27 @@
-use crate::ai::tree::SearchLimit;
-use crate::genetic::AGENT_DEPTH;
+
+
 use crate::play_two_ai;
-use lazy_static::lazy_static;
+
 use log::info;
-use pyo3::pyfunction;
-use pyo3::pymodule;
-use pyo3::types::PyModule;
-use pyo3::wrap_pyfunction;
-use pyo3::PyResult;
-use pyo3::Python;
+
+
+
+
+
+
 use rayon::prelude::*;
-use std::env;
+
 use std::fs::File;
 use std::io;
 use std::io::BufRead;
 use std::io::Write;
 use std::path::Path;
 
-use crate::cli::play_game;
-use crate::game::gamestate::GameBuilder;
-use crate::game::player::PossiblePlayer;
-use crate::game::player::AI;
-use crate::game::player::NN;
+
+
+
+
+
 
 fn play_agents(file_path: &str) -> Vec<(String, String, u8)> {
     let lines = read_lines(file_path).expect("could not read this file");

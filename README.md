@@ -1,17 +1,9 @@
 # Milestone
 
-## Demoing in Rust Quickly
-
-TODO:
-
-- AI will often defer winning in favor of making a different move (because at a
-  given depth, it will still eventually win), putting it off for very long
-  periods of time
-- enable the player (at the CLI) an option to print the evaluation tree from the
-  previous move
-- test game, add logging
-- measure performance impact of other forms of building the tree (storing moves
-  made and rolling them forward/back)
+We developed a game-playing AI for a novel board game called Milestone,
+developed by a Cornell Math Ph.D. student Mark Schachner. We've implemented this
+AI two-fold: as a tree-search-based, hyper-heuristic AI that is improved
+genetically; and as a NN trained on the resulting data.
 
 ## Board Position Strings
 
@@ -45,13 +37,3 @@ piped to a file to debug any other issues with the process.
 ## Database
 
 - Download VsCode Sqlite Extension (SQLite by alexcvzz)
-
-<!-- ## pyo3 & calling Rust from Python
-
-- After activating the venv (`source .venv/bin/activate`), run
-  `python3 -m maturin develop --release`
-- And then can execute the python file of choice -->
-
-## Exp 2 vs Exp 3
-
-- Best agents split the two game match

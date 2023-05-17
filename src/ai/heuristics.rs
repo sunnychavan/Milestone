@@ -3,9 +3,6 @@
 
 #![allow(non_camel_case_types)]
 
-// use strum::IntoEnumIterator; // 0.17.1
-// use strum_macros::EnumIter; // 0.17.1
-
 use std::{
     collections::{HashMap, HashSet},
     fmt::Debug,
@@ -53,22 +50,6 @@ enum Heuristics {
 }
 
 pub const NUM_HEURISTICS: usize = 19;
-
-// pub fn list_heuristics(){
-//     for i in 0..std::mem::variant_count::<Heuristics>() {
-//         let variant = unsafe {
-//             std::mem::transmute_copy(&i)
-//         };
-//         match variant {
-//             MyEnum::A => println!("Found variant A"),
-//             MyEnum::B => println!("Found variant B"),
-//             MyEnum::C => println!("Found variant C"),
-//         }
-//     let mut heuristic_string = String::new();
-//     for heur in Heuristics::iter(){
-//         heuristic_string.push_str(heur.name());
-//     }
-//     }
 
 #[enum_dispatch(Heuristics)]
 trait Heuristic {
@@ -739,11 +720,6 @@ impl Heuristic for StraightLines {
                 Some(i) => {
                     let straight_hole = state.board.board[*i];
                     matches!(straight_hole, Hole(Some(Black)))
-                    // matches! macro equivalent to:
-                    // match straight_hole {
-                    //     Hole(Some(Black)) => true,
-                    //     _ => false,
-                    // }
                 }
                 None => false,
             })
@@ -1044,7 +1020,6 @@ impl HeuristicWeights {
 
     pub fn new_with_state(&self, state: &State) -> HeuristicWeightsWithState {
         HeuristicWeightsWithState {
-            // TODO: probably shouldn't clone this twice and instead use borrows.. it's fine for now
             heuristic_weights: self.clone(),
             state: state.clone(),
         }

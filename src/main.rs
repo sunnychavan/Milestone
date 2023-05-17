@@ -3,18 +3,15 @@ pub mod cli;
 pub mod game;
 pub mod genetic;
 
-use cli::play_game;
+
 use dotenv::dotenv;
-use game::{
-    gamestate::{GameBuilder, State},
-    player::{PossiblePlayer, AI, NN},
-};
+
 use log::info;
 
-use milestone::data::evaluate_exps;
+
 use std::env;
 
-use milestone::{play_ai_vs_nn, play_two_nn, DATABASE_URL};
+use milestone::{DATABASE_URL};
 use rusqlite::Connection;
 
 #[allow(dead_code)]
