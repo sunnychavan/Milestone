@@ -5,6 +5,7 @@ output.svg
 flamegraph.svg
 *.sqlite3*
 logs/*
+*.log
 *.ipynb_checkpoints
 *.txt
 *.pyc
