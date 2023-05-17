@@ -5,6 +5,9 @@ developed by a Cornell Math Ph.D. student Mark Schachner. We've implemented this
 AI two-fold: as a tree-search-based, hyper-heuristic AI that is improved
 genetically; and as a NN trained on the resulting data.
 
+To launch our Milestone AI, simply launch the rust process. We recommend
+`cargo run --release` (with rust installed..).
+
 ## Board Position Strings
 
 - Creating a board from scratch:
