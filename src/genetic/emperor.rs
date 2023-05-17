@@ -108,7 +108,6 @@ pub fn run(initial_batch_num: u32, initial_agents: Option<Vec<AI>>) -> AI {
         && process_batch_num <= *PER_NUM_BATCHES
     {
         prev_batch = run_one_batch(prev_batch);
-        // prev_batch.push_batch().unwrap();
         total_batch_num += 1;
         process_batch_num += 1;
     }
@@ -217,17 +216,6 @@ fn push_batch(prev: &Referee) -> Result<()> {
         "#,
         params![batch_id, serialized_agents_with_record, timestamp],
     )?;
-
-    // let mut stmt = conn.prepare("SELECT agents FROM recovery_table")?;
-    // let agents_iter = stmt.query_map([], |row| {
-    //     let bin: Vec<u8> = row.get(0)?;
-    //     let agents_with_record: Vec<(AI, Score)> = bincode::deserialize(&bin).unwrap();
-    //     Ok(agents_with_record)
-    // })?;
-
-    // for agents in agents_iter {
-    //     println!("Found list of agents: {:?}", agents.unwrap());
-    // }
 
     Ok(())
 }

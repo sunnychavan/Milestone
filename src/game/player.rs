@@ -8,7 +8,6 @@ use crate::ai::tree::get_best_move;
 
 use super::gamestate::State;
 use core::fmt::Debug;
-use std::path::Path;
 
 use log::trace;
 use pyo3::types::{PyString, PyTuple};
@@ -18,7 +17,7 @@ use std::{fmt, io};
 use crate::game::player::Move::{Diagonal, Straight};
 
 use ordered_float::OrderedFloat;
-use pyo3::{prelude::*, types::IntoPyDict};
+use pyo3::prelude::*;
 
 #[derive(Debug, Clone, Default, PartialEq)]
 pub struct Person {
@@ -194,7 +193,7 @@ impl Player for NN {
     fn one_turn(&self, state: &mut State) {
         let next_move_vec = state.current_possible_moves(state.current_turn);
         let mut string_next_state_repr_vec: Vec<String> = Vec::new();
-        for m @ Straight(origin, dest) | m @ Diagonal(origin, dest) in
+        for _m @ Straight(origin, dest) | _m @ Diagonal(origin, dest) in
             &next_move_vec
         {
             let mut potential_state = state.clone();
@@ -216,16 +215,10 @@ impl Player for NN {
             })
             .collect();
 
-        // let (max_index_move, max_value) = next_state_nn_black_score
-        //     .iter()
-        //     .enumerate()
-        //     .max_by_key(|&(_, value)| OrderedFloat(*value))
-        //     .map(|(index, value)| (index,*value)).unwrap();
-
         let enumerable_state_score =
             next_state_nn_black_score.iter().enumerate();
 
-        let (best_index_move, best_value) = match state.current_turn {
+        let (best_index_move, _best_value) = match state.current_turn {
             0 => enumerable_state_score
                 .max_by_key(|&(_, value)| OrderedFloat(*value))
                 .map(|(index, value)| (index, *value))
@@ -237,9 +230,6 @@ impl Player for NN {
             _ => panic!("The current turn is a value other than 0 or 1."),
         };
 
-        // print!("HERE ARE THE VALUES");
-        // println!("{:?}", max_index_move);
-        // println!("{:?}", max_value);
         let best_nn_move = next_move_vec[best_index_move];
 
         match best_nn_move {
